@@ -12,9 +12,7 @@ export class AuthService {
 
   constructor(private ngZone: NgZone) { }
 
-  // En src/app/services/auth.service.ts
   initializeAuth(elementId: string) {
-    // Verificación robusta: Esperar a que 'google' esté definido
     const checkGoogle = setInterval(() => {
       if (typeof google !== 'undefined' && google.accounts) {
         clearInterval(checkGoogle);
@@ -48,7 +46,6 @@ export class AuthService {
 
   async requestCalendarAccess(): Promise<void> {
     return new Promise((resolve, reject) => {
-      // Si ya tenemos token, no pedimos permiso de nuevo
       if (localStorage.getItem('token')) {
         resolve();
       } else if (this.tokenClient) {
@@ -73,18 +70,22 @@ export class AuthService {
 
   private handleCredentialResponse(response: any) {
     const payload = this.decodeToken(response.credential);
+    
     this.ngZone.run(() => {
+      // Verificamos si el email está en la lista de coordinadores del environment
+      const isUserCoordinator = environment.coordinators.includes(payload.email);
+
       const userData: User = {
         email: payload.email,
         name: payload.name,
         picture: payload.picture,
-        isCoordinator: payload.email === 'coordinador@gmail.com'
+        isCoordinator: isUserCoordinator
       };
+
       this.user.set(userData);
       localStorage.setItem('user', JSON.stringify(userData));
 
-      // Tras loguear, solicitamos los permisos de calendario completos
-      this.requestCalendarAccess().catch(err => console.error(err));
+      this.requestCalendarAccess().catch(err => console.error("Error acceso calendario:", err));
     });
   }
 
@@ -98,6 +99,11 @@ export class AuthService {
 
   isLoggedIn(): boolean {
     return this.user() !== null;
+  }
+
+  // Método público útil para componentes
+  isCurrentUserCoordinator(): boolean {
+    return this.user()?.isCoordinator ?? false;
   }
 
   private decodeToken(token: string) {
