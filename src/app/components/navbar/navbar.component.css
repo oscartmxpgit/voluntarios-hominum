@@ -1,2 +1,4 @@
-nav { display: flex; justify-content: space-between; padding: 1rem; background: #f4f4f4; }
-ul { display: flex; list-style: none; gap: 1rem; }
+nav { display: flex; justify-content: space-between; padding: 1rem 2rem; background: #003366; color: white; }
+ul { display: flex; list-style: none; gap: 1.5rem; }
+a { color: white; text-decoration: none; font-weight: bold; }
+a.active { color: #E6B800; border-bottom: 2px solid #E6B800; }
