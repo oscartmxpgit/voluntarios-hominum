@@ -1,0 +1,2 @@
+nav { display: flex; justify-content: space-between; padding: 1rem; background: #f4f4f4; }
+ul { display: flex; list-style: none; gap: 1rem; }
