@@ -1,9 +1,19 @@
 <nav>
-  <div class="logo">Voluntarios Hominum</div>
+  <div class="logo">
+    <span class="icon">🤝</span>
+    <span class="brand">Hominum</span>
+  </div>
   <ul>
     <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Inicio</a></li>
-    <li><a routerLink="/calendar" routerLinkActive="active">Calendario</a></li>
-    <li><a routerLink="/dashboard" routerLinkActive="active">Dashboard</a></li>
-    <li><a routerLink="/login" routerLinkActive="active">Login</a></li>
+    
+    <ng-container *ngIf="authService.isLoggedIn()">
+      <li><a routerLink="/calendar" routerLinkActive="active">Calendario</a></li>
+      <li><a routerLink="/dashboard" routerLinkActive="active">Dashboard</a></li>
+      <li><a (click)="authService.logout()" class="logout-btn">Salir</a></li>
+    </ng-container>
+
+    <li *ngIf="!authService.isLoggedIn()">
+      <a routerLink="/login" routerLinkActive="active">Acceder</a>
+    </li>
   </ul>
 </nav>

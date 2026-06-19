@@ -1,21 +1,26 @@
 import { Injectable, inject } from '@angular/core';
+import { AuthService } from './auth.service';
 import { CalendarEvent } from '../models/calendar-event';
 
-// Declaramos gapi para evitar errores de compilación de TypeScript
 declare var gapi: any;
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class CalendarService {
-  private readonly CALENDAR_ID = 'primary'; // O el ID específico de tu calendario
+  private authService = inject(AuthService);
+  private readonly CALENDAR_ID = 'primary';
 
-  /**
-   * Obtiene todos los eventos del calendario configurado.
-   * En una implementación real, aquí se llamaría a gapi.client.calendar.events.list
-   */
+  private setAuthToken() {
+    const token = this.authService.getToken();
+    if (token) {
+      // Configuramos el token para que gapi lo use en las cabeceras automáticamente
+      gapi.client.setToken({ access_token: token });
+    }
+  }
+
   async getAllEvents(): Promise<CalendarEvent[]> {
     try {
+      this.setAuthToken(); // Autenticamos antes de la llamada
+      
       const response = await gapi.client.calendar.events.list({
         calendarId: this.CALENDAR_ID,
         orderBy: 'startTime',
@@ -24,14 +29,11 @@ export class CalendarService {
 
       return response.result.items.map((item: any) => this.mapToCalendarEvent(item));
     } catch (error) {
-      console.error('Error al obtener eventos de Google Calendar:', error);
+      console.error('Error al obtener eventos:', error);
       return [];
     }
   }
 
-  /**
-   * Mapea la respuesta de la API de Google al modelo interno CalendarEvent
-   */
   private mapToCalendarEvent(item: any): CalendarEvent {
     return {
       id: item.id,
@@ -48,25 +50,5 @@ export class CalendarService {
         }
       }
     };
-  }
-
-  /**
-   * Crea un nuevo evento en el calendario
-   */
-  async createEvent(event: CalendarEvent): Promise<any> {
-    return await gapi.client.calendar.events.insert({
-      calendarId: this.CALENDAR_ID,
-      resource: event
-    });
-  }
-
-  /**
-   * Elimina un evento
-   */
-  async deleteEvent(eventId: string): Promise<any> {
-    return await gapi.client.calendar.events.delete({
-      calendarId: this.CALENDAR_ID,
-      eventId: eventId
-    });
   }
 }

@@ -1,11 +1,21 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { FullCalendarModule } from '@fullcalendar/angular';
+import { CalendarOptions } from '@fullcalendar/core';
+import dayGridPlugin from '@fullcalendar/daygrid';
 
 @Component({
   selector: 'app-calendar-view',
-  imports: [],
+  standalone: true,
+  imports: [FullCalendarModule],
   templateUrl: './calendar-view.component.html',
-  styleUrl: './calendar-view.component.css'
+  styleUrls: ['./calendar-view.component.css']
 })
-export class CalendarViewComponent {
+export class CalendarViewComponent implements OnInit {
+  calendarOptions: CalendarOptions = {
+    initialView: 'dayGridMonth',
+    plugins: [dayGridPlugin],
+    events: [] // Aquí se cargarán los eventos desde CalendarService
+  };
 
+  ngOnInit() {}
 }

@@ -4,12 +4,15 @@ import { AuthService } from '../../services/auth.service';
 @Component({
   selector: 'app-login',
   standalone: true,
-  template: `<div id="google-button"></div>`
+  templateUrl: './login.component.html',
+  styleUrls: ['./login.component.css']
 })
 export class LoginComponent implements AfterViewInit {
   constructor(private auth: AuthService) {}
 
   ngAfterViewInit() {
-    this.auth.initializeAuth();
+    if (typeof google !== 'undefined') {
+      this.auth.initializeAuth('google-button');
+    }
   }
 }
