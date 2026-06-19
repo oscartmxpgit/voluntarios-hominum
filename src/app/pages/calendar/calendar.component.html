@@ -1,6 +1,12 @@
-<div class="calendar-page">
-  <h2>Calendario de Visitas</h2>
-  <div class="calendar-container">
-    <full-calendar [options]="calendarOptions"></full-calendar>
-  </div>
+<div class="calendar-container">
+  <full-calendar [options]="calendarOptions"></full-calendar>
+
+  @if (isFormVisible) {
+    <div class="modal-overlay">
+      <app-event-form 
+        [eventData]="selectedEvent" 
+        >
+      </app-event-form>
+    </div>
+  }
 </div>

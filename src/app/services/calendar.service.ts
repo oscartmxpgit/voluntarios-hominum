@@ -28,7 +28,7 @@ export class CalendarService {
       w.gapi.client.setToken({ access_token: token });
       return true;
     }
-    
+
     return false;
   }
 
@@ -37,7 +37,7 @@ export class CalendarService {
    */
   async getAllEvents(): Promise<any[]> {
     const w = window as any;
-    
+
     // 1. Verificar inicialización de gapi
     if (!w.gapi || !w.gapi.client) {
       console.error("Error: gapi.client no está inicializado.");
@@ -111,25 +111,38 @@ export class CalendarService {
   }
 
   // Editar un evento existente
+  // Editar un evento existente
+  // Editar un evento existente (Actualizado con lógica de fecha/dateTime)
   async updateEvent(eventId: string, eventDetails: any): Promise<any> {
     const w = window as any;
-    try {
-      const response = await w.gapi.client.calendar.events.patch({
-        calendarId: this.CALENDAR_ID,
-        eventId: eventId,
-        resource: {
-          summary: eventDetails.title,
-          start: { dateTime: eventDetails.start },
-          end: { dateTime: eventDetails.end },
-          extendedProperties: {
-            private: eventDetails.extendedProps
-          }
-        }
-      });
-      return response.result;
-    } catch (error) {
-      console.error('Error al editar evento:', error);
-      throw error;
+    
+    // Asegurar autenticación antes de la petición
+    const isAuthorized = await this.ensureAuthToken();
+    if (!isAuthorized) throw new Error("No autorizado");
+
+    // Lógica para determinar si es un evento con hora o todo el día
+    // Si la cadena contiene 'T', es un dateTime, si no, es solo 'date'
+    const isDateTime = eventDetails.start.includes('T');
+
+    const resource: any = {
+      summary: eventDetails.title,
+      extendedProperties: {
+        private: eventDetails.extendedProps
+      }
+    };
+
+    if (isDateTime) {
+      resource.start = { dateTime: eventDetails.start };
+      resource.end = { dateTime: eventDetails.end };
+    } else {
+      resource.start = { date: eventDetails.start };
+      resource.end = { date: eventDetails.end };
     }
+
+    return await w.gapi.client.calendar.events.patch({
+      calendarId: this.CALENDAR_ID,
+      eventId: eventId,
+      resource: resource
+    });
   }
 }
