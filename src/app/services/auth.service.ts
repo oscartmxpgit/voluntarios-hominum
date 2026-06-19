@@ -1,20 +1,20 @@
 import { Injectable, signal, NgZone } from '@angular/core';
 import { User } from '../models/user';
-import { environment } from '../../environments/environment'; // Importamos el entorno
+import { environment } from '../../environments/environment';
 
 declare var google: any;
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  // Usamos la variable del entorno
   private readonly CLIENT_ID = environment.googleClientId;
-  
+  private tokenClient: any;
   user = signal<User | null>(this.loadUserFromStorage());
 
   constructor(private ngZone: NgZone) {}
 
   initializeAuth(elementId: string) {
     if (typeof google !== 'undefined' && google.accounts) {
+      // 1. Inicialización para Login (Identidad)
       google.accounts.id.initialize({
         client_id: this.CLIENT_ID,
         callback: (res: any) => this.handleCredentialResponse(res)
@@ -22,12 +22,42 @@ export class AuthService {
       
       const buttonElement = document.getElementById(elementId);
       if (buttonElement) {
-        google.accounts.id.renderButton(
-          buttonElement,
-          { theme: "outline", size: "large", type: "standard" }
-        );
+        google.accounts.id.renderButton(buttonElement, { theme: "outline", size: "large" });
       }
+
+      // 2. Inicialización para acceso a APIs (Autorización)
+      this.tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: this.CLIENT_ID,
+        scope: 'https://www.googleapis.com/auth/calendar.readonly',
+        callback: (response: any) => {
+          if (response.access_token) {
+            localStorage.setItem('token', response.access_token);
+            console.log("Access token obtenido correctamente");
+          }
+        },
+      });
     }
+  }
+
+  async requestCalendarAccess(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (localStorage.getItem('token')) {
+        resolve();
+      } else if (this.tokenClient) {
+        // Configuramos el callback para resolver la promesa cuando llegue el token
+        this.tokenClient.callback = (response: any) => {
+          if (response.access_token) {
+            localStorage.setItem('token', response.access_token);
+            resolve();
+          } else {
+            reject("No se pudo obtener el token");
+          }
+        };
+        this.tokenClient.requestAccessToken();
+      } else {
+        reject("TokenClient no inicializado");
+      }
+    });
   }
 
   getToken(): string | null {
@@ -36,7 +66,6 @@ export class AuthService {
 
   private handleCredentialResponse(response: any) {
     const payload = this.decodeToken(response.credential);
-
     this.ngZone.run(() => {
       const userData: User = {
         email: payload.email,
@@ -44,10 +73,11 @@ export class AuthService {
         picture: payload.picture,
         isCoordinator: payload.email === 'coordinador@gmail.com'
       };
-
       this.user.set(userData);
       localStorage.setItem('user', JSON.stringify(userData));
-      localStorage.setItem('token', response.credential);
+      
+      // Una vez logueado, pedimos permiso para el calendario
+      this.requestCalendarAccess().catch(err => console.error(err));
     });
   }
 

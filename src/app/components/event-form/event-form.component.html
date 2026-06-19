@@ -1,0 +1,7 @@
+<div class="modal">
+  <h3>{{ eventData.id ? 'Editar Evento' : 'Nuevo Evento' }}</h3>
+  <input [(ngModel)]="eventData.title" placeholder="Título del evento">
+  <input [(ngModel)]="eventData.extendedProps.patientName" placeholder="Nombre paciente">
+  <button (click)="save()">Guardar</button>
+  <button (click)="close.emit()">Cancelar</button>
+</div>
