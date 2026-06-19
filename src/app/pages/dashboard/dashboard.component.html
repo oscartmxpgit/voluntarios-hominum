@@ -1,8 +1,37 @@
 <div class="dashboard-page">
   <h2>Panel de Control - Coordinación</h2>
-  <div class="stats-grid">
-    <section>
-      <h3>Resumen General</h3>
+
+  @if (loading) {
+    <p>Cargando estadísticas...</p>
+  } @else if (stats) {
+    <div class="stats-grid">
+      <section class="card">
+        <h3>Total Visitas</h3>
+        <p class="big-number">{{ stats.totalVisits }}</p>
       </section>
-  </div>
+
+      <section class="card">
+        <h3>Horas este mes</h3>
+        <p class="big-number">{{ stats.totalMonthlyHours | number:'1.1-1' }}h</p>
+      </section>
+
+      <section class="card">
+        <h3>Horas por Categoría</h3>
+        <ul>
+          @for (item of stats.hoursByCategory | keyvalue; track item.key) {
+            <li><strong>{{ item.key }}:</strong> {{ item.value | number:'1.1-1' }}h</li>
+          }
+        </ul>
+      </section>
+
+      <section class="card">
+        <h3>Horas por Voluntario</h3>
+        <ul>
+          @for (item of stats.hoursByVolunteer | keyvalue; track item.key) {
+            <li><strong>{{ item.key }}:</strong> {{ item.value | number:'1.1-1' }}h</li>
+          }
+        </ul>
+      </section>
+    </div>
+  }
 </div>

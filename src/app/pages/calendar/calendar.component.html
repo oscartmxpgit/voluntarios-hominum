@@ -5,7 +5,7 @@
     <div class="modal-overlay">
       <app-event-form 
         [eventData]="selectedEvent" 
-        >
+        (close)="closeForm()">
       </app-event-form>
     </div>
   }

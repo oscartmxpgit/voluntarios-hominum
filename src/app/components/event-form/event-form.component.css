@@ -1,0 +1,37 @@
+.modal-container {
+  background: rgba(0, 0, 0, 0.6); /* Fondo oscuro semitransparente */
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.modal-content {
+  background: white; /* AQUÍ ELIMINAMOS LA TRANSPARENCIA DEL MODAL */
+  padding: 25px;
+  border-radius: 10px;
+  width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+input {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  width: 100%;
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+}
+
+button { padding: 10px 20px; cursor: pointer; border: none; border-radius: 5px; }
+.btn-save { background: #28a745; color: white; }
+.btn-cancel { background: #dc3545; color: white; }

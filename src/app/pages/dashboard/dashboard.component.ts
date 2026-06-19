@@ -2,6 +2,13 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SummaryService } from '../../services/summary.service';
 
+interface DashboardStats {
+  totalVisits: number;
+  totalMonthlyHours: number;
+  hoursByCategory: Record<string, number>;
+  hoursByVolunteer: Record<string, number>;
+}
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -10,21 +17,18 @@ import { SummaryService } from '../../services/summary.service';
   styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent implements OnInit {
-  // Inyección de dependencia moderna usando inject
   private summaryService = inject(SummaryService);
   
-  // Propiedades para mostrar en el template
-  stats: any = null;
+  stats: DashboardStats | null = null;
   loading: boolean = true;
 
-  ngOnInit(): void {
-    this.loadDashboardData();
+  async ngOnInit(): Promise<void> {
+    await this.loadDashboardData();
   }
 
-  private async loadDashboardData() {
+  private async loadDashboardData(): Promise<void> {
     try {
-      // Supongamos que el servicio devuelve un observable o una promesa
-      this.stats = await this.summaryService.getTotalStats();
+      this.stats = await this.summaryService.getTotalStats() as DashboardStats;
     } catch (error) {
       console.error('Error al cargar estadísticas:', error);
     } finally {

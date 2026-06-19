@@ -2,14 +2,17 @@ import { Component, OnInit, inject } from '@angular/core';
 import { FullCalendarModule } from '@fullcalendar/angular';
 import { CalendarOptions } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { CalendarService } from '../../services/calendar.service';
 import { EventFormComponent } from '../../components/event-form/event-form.component';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-calendar',
   standalone: true,
-  imports: [FullCalendarModule, EventFormComponent],
+  // IMPORTANTE: FullCalendarModule debe estar aquí para que los plugins funcionen
+  imports: [CommonModule, FullCalendarModule, EventFormComponent], 
   templateUrl: './calendar.component.html',
   styleUrls: ['./calendar.component.css']
 })
@@ -21,13 +24,13 @@ export class CalendarComponent implements OnInit {
 
   calendarOptions: CalendarOptions = {
     initialView: 'dayGridMonth',
-    plugins: [dayGridPlugin, interactionPlugin],
+    plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
     selectable: true,
     editable: true,
     headerToolbar: {
       left: 'prev,next today',
       center: 'title',
-      right: 'dayGridMonth,dayGridWeek'
+      right: 'dayGridMonth,timeGridWeek'
     },
     dateClick: (info) => this.handleDateClick(info),
     eventClick: (info) => this.handleEventClick(info),
@@ -48,8 +51,8 @@ export class CalendarComponent implements OnInit {
   handleDateClick(info: any) {
     this.selectedEvent = {
       title: '',
-      start: info.dateStr,
-      end: info.dateStr,
+      start: info.dateStr + 'T09:00',
+      end: info.dateStr + 'T10:00',
       extendedProps: { volunteerName: '', patientName: '', category: '', notes: '' }
     };
     this.isFormVisible = true;
@@ -60,14 +63,13 @@ export class CalendarComponent implements OnInit {
       id: info.event.id,
       title: info.event.title,
       start: info.event.startStr,
-      end: info.event.endStr,
+      end: info.event.endStr || info.event.startStr,
       extendedProps: { ...info.event.extendedProps }
     };
     this.isFormVisible = true;
   }
 
   async handleEventChange(info: any) {
-    // Usar directamente las cadenas ISO proporcionadas por FullCalendar
     const updatedEvent = {
       title: info.event.title,
       start: info.event.startStr, 
@@ -81,5 +83,11 @@ export class CalendarComponent implements OnInit {
       console.error("Error al persistir cambio, revirtiendo...", error);
       info.revert();
     }
+  }
+
+  async closeForm() {
+    this.isFormVisible = false;
+    this.selectedEvent = null;
+    await this.loadEvents();
   }
 }

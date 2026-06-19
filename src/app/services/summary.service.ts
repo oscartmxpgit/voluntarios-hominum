@@ -8,43 +8,57 @@ import { CalendarEvent } from '../models/calendar-event';
 export class SummaryService {
   private calendarService = inject(CalendarService);
 
+  // Filtro de seguridad: solo procesamos eventos creados por nuestra app
+  private hasCustomProperties(event: CalendarEvent): boolean {
+    return !!(event.extendedProperties?.private?.volunteerName);
+  }
+
   async getTotalStats() {
     const events = await this.calendarService.getAllEvents();
+    // Filtramos los eventos válidos antes de procesarlos
+    const validEvents = events.filter(e => this.hasCustomProperties(e));
+    
     return {
-      hoursByVolunteer: this.calculateHoursByVolunteer(events),
-      hoursByCategory: this.calculateHoursByCategory(events),
-      totalMonthlyHours: this.calculateTotalMonthlyHours(events),
-      totalVisits: events.length
+      hoursByVolunteer: this.calculateHoursByVolunteer(validEvents),
+      hoursByCategory: this.calculateHoursByCategory(validEvents),
+      totalMonthlyHours: this.calculateTotalMonthlyHours(validEvents),
+      totalVisits: validEvents.length
     };
   }
 
-  private calculateHours(start: string, end: string): number {
-    const diff = new Date(end).getTime() - new Date(start).getTime();
-    return diff / (1000 * 60 * 60);
+  private getEventDuration(event: CalendarEvent): number {
+    const startStr = event.start.dateTime || event.start.date;
+    const endStr = event.end.dateTime || event.end.date;
+
+    if (!startStr || !endStr) return 0;
+
+    const diff = new Date(endStr).getTime() - new Date(startStr).getTime();
+    return Math.max(0, diff / (1000 * 60 * 60));
   }
 
   private calculateHoursByVolunteer(events: CalendarEvent[]) {
     return events.reduce((acc: any, event) => {
-      const hours = this.calculateHours(event.start.dateTime, event.end.dateTime);
-      const name = event.extendedProperties.private.volunteerName;
-      acc[name] = (acc[name] || 0) + hours;
+      const name = event.extendedProperties!.private!.volunteerName!;
+      acc[name] = (acc[name] || 0) + this.getEventDuration(event);
       return acc;
     }, {});
   }
 
   private calculateHoursByCategory(events: CalendarEvent[]) {
     return events.reduce((acc: any, event) => {
-      const hours = this.calculateHours(event.start.dateTime, event.end.dateTime);
-      const cat = event.extendedProperties.private.category;
-      acc[cat] = (acc[cat] || 0) + hours;
+      const cat = event.extendedProperties!.private!.category || 'General';
+      acc[cat] = (acc[cat] || 0) + this.getEventDuration(event);
       return acc;
     }, {});
   }
 
   private calculateTotalMonthlyHours(events: CalendarEvent[]) {
-    const currentMonth = new Date().getMonth();
+    const now = new Date();
     return events
-      .filter(e => new Date(e.start.dateTime).getMonth() === currentMonth)
-      .reduce((acc, event) => acc + this.calculateHours(event.start.dateTime, event.end.dateTime), 0);
+      .filter(e => {
+        const date = new Date(e.start.dateTime || e.start.date!);
+        return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+      })
+      .reduce((acc, event) => acc + this.getEventDuration(event), 0);
   }
 }
