@@ -1,4 +1,5 @@
-import { Injectable, signal, NgZone } from '@angular/core';
+import { Injectable, signal, NgZone, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { User } from '../models/user';
 import { environment } from '../../environments/environment';
 
@@ -7,6 +8,7 @@ declare var google: any;
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly CLIENT_ID = environment.googleClientId;
+  private router = inject(Router);
   private tokenClient: any;
   user = signal<User | null>(this.loadUserFromStorage());
 
@@ -38,7 +40,7 @@ export class AuthService {
       callback: (response: any) => {
         if (response.access_token) {
           localStorage.setItem('token', response.access_token);
-          console.log("Access token obtenido correctamente");
+          this.ngZone.run(() => this.router.navigate(['/calendar']));
         }
       },
     });
@@ -47,34 +49,22 @@ export class AuthService {
   async requestCalendarAccess(): Promise<void> {
     return new Promise((resolve, reject) => {
       if (localStorage.getItem('token')) {
+        this.router.navigate(['/calendar']);
         resolve();
       } else if (this.tokenClient) {
-        this.tokenClient.callback = (response: any) => {
-          if (response.access_token) {
-            localStorage.setItem('token', response.access_token);
-            resolve();
-          } else {
-            reject("No se pudo obtener el token");
-          }
-        };
         this.tokenClient.requestAccessToken();
+        resolve();
       } else {
         reject("TokenClient no inicializado");
       }
     });
   }
 
-  getToken(): string | null {
-    return localStorage.getItem('token');
-  }
-
   private handleCredentialResponse(response: any) {
     const payload = this.decodeToken(response.credential);
     
     this.ngZone.run(() => {
-      // Verificamos si el email está en la lista de coordinadores del environment
       const isUserCoordinator = environment.coordinators.includes(payload.email);
-
       const userData: User = {
         email: payload.email,
         name: payload.name,
@@ -84,10 +74,11 @@ export class AuthService {
 
       this.user.set(userData);
       localStorage.setItem('user', JSON.stringify(userData));
-
-      this.requestCalendarAccess().catch(err => console.error("Error acceso calendario:", err));
+      this.requestCalendarAccess();
     });
   }
+
+  getToken(): string | null { return localStorage.getItem('token'); }
 
   logout() {
     if (typeof google !== 'undefined' && google.accounts) {
@@ -95,16 +86,10 @@ export class AuthService {
     }
     this.user.set(null);
     localStorage.clear();
+    this.router.navigate(['/login']);
   }
 
-  isLoggedIn(): boolean {
-    return this.user() !== null;
-  }
-
-  // Método público útil para componentes
-  isCurrentUserCoordinator(): boolean {
-    return this.user()?.isCoordinator ?? false;
-  }
+  isLoggedIn(): boolean { return this.user() !== null; }
 
   private decodeToken(token: string) {
     return JSON.parse(window.atob(token.split('.')[1]));

@@ -9,27 +9,27 @@ export class SummaryService {
   private calendarService = inject(CalendarService);
 
   private hasCustomProperties(event: CalendarEvent): boolean {
-    const hasProps = !!(event.extendedProperties?.private?.volunteerName);
+    // Verificamos si al menos existe el objeto private
+    const hasProps = !!(event.extendedProperties?.private);
     if (!hasProps) {
-      // AQUÍ VEREMOS EL OBJETO REAL SI FALLA
-      console.warn('Evento ignorado:', event.summary, 'Propiedades:', event.extendedProperties);
+      console.warn('Evento sin metadatos privados:', event.summary);
     }
     return hasProps;
   }
 
   async getTotalStats() {
     const events = await this.calendarService.getAllEvents();
-    
-    // LOG DE INSPECCIÓN: Despliega esto en la consola del navegador
+
+    // Inspección detallada
     console.log('--- INSPECCIÓN DE EVENTOS ---');
-    console.table(events.map(e => ({ 
-      summary: e.summary, 
+    console.table(events.map(e => ({
+      summary: e.summary,
       hasPrivate: !!e.extendedProperties?.private,
-      volunteer: e.extendedProperties?.private?.volunteerName 
+      volunteer: e.extendedProperties?.private?.volunteerName || 'VACÍO'
     })));
-    
+
     const validEvents = events.filter(e => this.hasCustomProperties(e));
-    
+
     return {
       hoursByVolunteer: this.calculateHoursByVolunteer(validEvents),
       hoursByCategory: this.calculateHoursByCategory(validEvents),
@@ -46,19 +46,23 @@ export class SummaryService {
 
     const start = new Date(startStr).getTime();
     const end = new Date(endStr).getTime();
-    
+
     if (isNaN(start) || isNaN(end)) return 0;
 
     const diff = end - start;
     const hours = diff / (1000 * 60 * 60);
 
-    return hours > 0 ? hours : 0;
+    // SI ES 0 (evento de todo el día), forzamos a 8 horas (o lo que consideres jornada)
+    // Si NO es evento de todo el día, devolvemos las horas calculadas
+    return hours > 0 ? hours : 8;
   }
 
   private calculateHoursByVolunteer(events: CalendarEvent[]) {
     return events.reduce((acc: any, event) => {
-      const name = event.extendedProperties!.private!.volunteerName!;
+      // Uso de encadenamiento opcional seguro para evitar errores en tiempo de ejecución
+      const name = event.extendedProperties?.private?.volunteerName || 'Desconocido';
       const hours = this.getEventDuration(event);
+
       acc[name] = (acc[name] || 0) + hours;
       return acc;
     }, {});
@@ -66,8 +70,9 @@ export class SummaryService {
 
   private calculateHoursByCategory(events: CalendarEvent[]) {
     return events.reduce((acc: any, event) => {
-      const cat = event.extendedProperties!.private!.category || 'General';
+      const cat = event.extendedProperties?.private?.category || 'General';
       const hours = this.getEventDuration(event);
+
       acc[cat] = (acc[cat] || 0) + hours;
       return acc;
     }, {});

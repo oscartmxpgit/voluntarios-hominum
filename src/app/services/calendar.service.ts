@@ -10,10 +10,6 @@ export class CalendarService {
   private authService = inject(AuthService);
   private readonly CALENDAR_ID = environment.calendarId;
 
-  /**
-   * Asegura que gapi tenga el token de acceso configurado.
-   * Si no hay token, intenta solicitar acceso antes de continuar.
-   */
   private async ensureAuthToken(): Promise<boolean> {
     const token = this.authService.getToken();
     const w = window as any;
@@ -33,38 +29,35 @@ export class CalendarService {
   }
 
   /**
-   * Obtiene la lista de eventos desde la API de Google Calendar.
+   * Obtiene la lista de eventos. 
+   * NOTA: Se eliminó el parámetro privateExtendedProperty para evitar errores 400.
+   * Los datos vienen incluidos por defecto si el evento los tiene.
    */
   async getAllEvents(): Promise<any[]> {
     const w = window as any;
 
-    // 1. Verificar inicialización de gapi
     if (!w.gapi || !w.gapi.client) {
       console.error("Error: gapi.client no está inicializado.");
       return [];
     }
 
-    // 2. Asegurar autenticación
     const isAuthorized = await this.ensureAuthToken();
     if (!isAuthorized) {
-      console.error("No se pudo obtener autorización para acceder al calendario.");
+      console.error("No se pudo obtener autorización.");
       return [];
     }
 
     try {
-      // 3. Petición a la API
       const response = await w.gapi.client.calendar.events.list({
         calendarId: this.CALENDAR_ID,
         orderBy: 'startTime',
         singleEvents: true
       });
 
-      // 4. Mapeo a formato FullCalendar
       return response.result.items.map((item: any) => this.mapToFullCalendarEvent(item));
     } catch (error: any) {
-      // Si el error es 401, limpiamos el token para forzar nueva petición
       if (error.status === 401 || error.result?.error?.code === 401) {
-        console.warn("Token expirado o inválido, limpiando...");
+        console.warn("Token expirado, limpiando...");
         localStorage.removeItem('token');
       }
       console.error('Error al obtener eventos de Google Calendar:', error);
@@ -78,6 +71,8 @@ export class CalendarService {
       title: item.summary || 'Sin título',
       start: item.start.dateTime || item.start.date,
       end: item.end.dateTime || item.end.date,
+      // Mapeamos el objeto completo para que el SummaryService pueda inspeccionarlo
+      extendedProperties: item.extendedProperties, 
       extendedProps: {
         volunteerEmail: item.extendedProperties?.private?.volunteerEmail || '',
         volunteerName: item.extendedProperties?.private?.volunteerName || '',
@@ -88,7 +83,6 @@ export class CalendarService {
     };
   }
 
-  // Crear un nuevo evento
   async createEvent(eventDetails: any): Promise<any> {
     const w = window as any;
     try {
@@ -99,7 +93,7 @@ export class CalendarService {
           start: { dateTime: eventDetails.start },
           end: { dateTime: eventDetails.end },
           extendedProperties: {
-            private: eventDetails.extendedProps // Aquí guardamos tus campos personalizados
+            private: eventDetails.extendedProps
           }
         }
       });
@@ -110,18 +104,12 @@ export class CalendarService {
     }
   }
 
-  // Editar un evento existente
-  // Editar un evento existente
-  // Editar un evento existente (Actualizado con lógica de fecha/dateTime)
   async updateEvent(eventId: string, eventDetails: any): Promise<any> {
     const w = window as any;
     
-    // Asegurar autenticación antes de la petición
     const isAuthorized = await this.ensureAuthToken();
     if (!isAuthorized) throw new Error("No autorizado");
 
-    // Lógica para determinar si es un evento con hora o todo el día
-    // Si la cadena contiene 'T', es un dateTime, si no, es solo 'date'
     const isDateTime = eventDetails.start.includes('T');
 
     const resource: any = {

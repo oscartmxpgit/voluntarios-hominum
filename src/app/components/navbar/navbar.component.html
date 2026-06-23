@@ -1,11 +1,10 @@
 <nav>
-  <div class="logo">
-    <span class="icon">🤝</span>
+  <a routerLink="/" class="logo">
+    <img src="assets/handshake.png" alt="Hominum Logo" class="logo-img">
     <span class="brand">Hominum</span>
-  </div>
+  </a>
+
   <ul>
-    <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Inicio</a></li>
-    
     <ng-container *ngIf="authService.isLoggedIn()">
       <li><a routerLink="/calendar" routerLinkActive="active">Calendario</a></li>
       <li><a routerLink="/dashboard" routerLinkActive="active">Dashboard</a></li>

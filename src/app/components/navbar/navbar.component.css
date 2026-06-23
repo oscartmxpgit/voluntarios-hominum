@@ -5,7 +5,6 @@ nav {
   position: sticky; top: 0; z-index: 1000;
 }
 
-.logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.5rem; color: #003366; }
 .icon { font-size: 1.8rem; }
 
 ul { display: flex; list-style: none; gap: 2rem; align-items: center; }
@@ -21,3 +20,25 @@ a.active { color: #003366; border-bottom: 2px solid #E6B800; padding-bottom: 4px
   background: #f1f5f9; padding: 0.5rem 1rem; border-radius: 6px; color: #ef4444; 
 }
 .logout-btn:hover { background: #fee2e2; }
+
+/* Contenedor del logo */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Tamaño controlado para la imagen */
+.logo-img {
+  width: 32px;  /* Ajusta este valor según el tamaño de tu imagen */
+  height: 32px;
+  object-fit: contain;
+}
+
+.brand {
+  font-weight: 600;
+  font-size: 1.2rem;
+}

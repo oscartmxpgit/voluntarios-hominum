@@ -2,7 +2,7 @@
   <h2>Panel de Control - Coordinación</h2>
 
   @if (loading) {
-    <p>Cargando estadísticas...</p>
+    <div class="loading">Cargando estadísticas...</div>
   } @else if (stats) {
     <div class="stats-grid">
       <section class="card">
@@ -19,7 +19,7 @@
         <h3>Horas por Categoría</h3>
         <ul>
           @for (item of stats.hoursByCategory | keyvalue; track item.key) {
-            <li><strong>{{ item.key }}:</strong> {{ item.value | number:'1.1-1' }}h</li>
+            <li>{{ item.key }} <span class="val-badge">{{ item.value | number:'1.1-1' }}h</span></li>
           }
         </ul>
       </section>
@@ -28,7 +28,7 @@
         <h3>Horas por Voluntario</h3>
         <ul>
           @for (item of stats.hoursByVolunteer | keyvalue; track item.key) {
-            <li><strong>{{ item.key }}:</strong> {{ item.value | number:'1.1-1' }}h</li>
+            <li>{{ item.key }} <span class="val-badge">{{ item.value | number:'1.1-1' }}h</span></li>
           }
         </ul>
       </section>
