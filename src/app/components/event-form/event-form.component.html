@@ -6,7 +6,7 @@
     <input [(ngModel)]="eventData.title" placeholder="Título">
 
     <label>Inicio</label>
-    <input type="datetime-local" [(ngModel)]="eventData.start">
+    <input type="datetime-local" [(ngModel)]="eventData.start" (change)="onStartChange()">
 
     <label>Fin</label>
     <input type="datetime-local" [(ngModel)]="eventData.end">

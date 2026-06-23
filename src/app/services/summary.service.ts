@@ -20,6 +20,14 @@ export class SummaryService {
   async getTotalStats() {
     const events = await this.calendarService.getAllEvents();
 
+    // En SummaryService -> getTotalStats()
+    console.log('--- INSPECCIÓN DE EVENTOS ---');
+    events.forEach(e => {
+      console.log('Evento:', e.summary);
+      console.log('Props privadas:', e.extendedProperties?.private);
+      console.log('Start:', e.start.dateTime || e.start.date);
+    });
+
     // Inspección detallada
     console.log('--- INSPECCIÓN DE EVENTOS ---');
     console.table(events.map(e => ({
@@ -47,14 +55,11 @@ export class SummaryService {
     const start = new Date(startStr).getTime();
     const end = new Date(endStr).getTime();
 
-    if (isNaN(start) || isNaN(end)) return 0;
-
     const diff = end - start;
     const hours = diff / (1000 * 60 * 60);
 
-    // SI ES 0 (evento de todo el día), forzamos a 8 horas (o lo que consideres jornada)
-    // Si NO es evento de todo el día, devolvemos las horas calculadas
-    return hours > 0 ? hours : 8;
+    // Si es 0 (mismo día/sin hora), retornamos 1 hora por defecto en lugar de 0
+    return hours > 0 ? hours : 1;
   }
 
   private calculateHoursByVolunteer(events: CalendarEvent[]) {
