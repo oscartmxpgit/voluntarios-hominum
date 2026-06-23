@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CalendarService } from '../../services/calendar.service';
 
@@ -10,34 +10,54 @@ import { CalendarService } from '../../services/calendar.service';
   styleUrls: ['./event-form.component.css']
 })
 export class EventFormComponent {
-  @Input() eventData: any = { title: '', start: '', end: '', extendedProps: {} };
+  private _eventData: any = {};
+
+  @Input() set eventData(value: any) {
+    // Clonación profunda y segura para evitar errores de extensibilidad
+    this._eventData = {
+      ...value,
+      start: value.start ? new Date(value.start).toISOString().slice(0, 16) : '',
+      end: value.end ? new Date(value.end).toISOString().slice(0, 16) : '',
+      // Aseguramos que extendedProps sea un objeto nuevo, independiente de la referencia original
+      extendedProps: value.extendedProps ? { ...value.extendedProps } : {}
+    };
+  }
+
+  get eventData() { return this._eventData; }
+
   @Output() close = new EventEmitter<void>();
   private calendarService = inject(CalendarService);
 
-  // Autocompletar fin: 1 hora después del inicio
+  @HostListener('document:keydown.escape', ['$event'])
+  onKeydownHandler(event: KeyboardEvent) {
+    this.close.emit();
+  }
+
   onStartChange() {
-    if (this.eventData.start) {
-      const startDate = new Date(this.eventData.start);
-      startDate.setHours(startDate.getHours() + 1);
-      // Formato requerido: YYYY-MM-DDTHH:mm
-      this.eventData.end = startDate.toISOString().slice(0, 16);
+    if (this._eventData.start) {
+      const startDate = new Date(this._eventData.start);
+      if (!isNaN(startDate.getTime())) {
+        startDate.setHours(startDate.getHours() + 1);
+        this._eventData.end = startDate.toISOString().slice(0, 16);
+      }
     }
   }
 
   async save() {
     try {
-      // Asegurar que el objeto extendedProps existe para no romper el servicio
-      if (!this.eventData.extendedProps) this.eventData.extendedProps = {};
+      // PREPARACIÓN PARA SUMMARY SERVICE:
+      // Cuando guardamos, el CalendarService usa 'extendedProps' para crear 
+      // la estructura 'extendedProperties.private' que SummaryService analiza.
       
-      if (this.eventData.id) {
-        await this.calendarService.updateEvent(this.eventData.id, this.eventData);
+      if (this._eventData.id) {
+        await this.calendarService.updateEvent(this._eventData.id, this._eventData);
       } else {
-        await this.calendarService.createEvent(this.eventData);
+        await this.calendarService.createEvent(this._eventData);
       }
       this.close.emit();
     } catch (error) {
-      console.error("Error al guardar en Google Calendar:", error);
-      alert("Hubo un error al guardar. Verifica la consola.");
+      console.error("Error al guardar:", error);
+      alert("Error al guardar. Verifica la consola.");
     }
   }
 }

@@ -6,13 +6,11 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { CalendarService } from '../../services/calendar.service';
 import { EventFormComponent } from '../../components/event-form/event-form.component';
-import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-calendar',
   standalone: true,
-  // IMPORTANTE: FullCalendarModule debe estar aquí para que los plugins funcionen
-  imports: [CommonModule, FullCalendarModule, EventFormComponent], 
+  imports: [FullCalendarModule, EventFormComponent],
   templateUrl: './calendar.component.html',
   styleUrls: ['./calendar.component.css']
 })
@@ -22,15 +20,27 @@ export class CalendarComponent implements OnInit {
   isFormVisible = false;
   selectedEvent: any = null;
 
+  // En tu calendarOptions dentro de CalendarComponent
   calendarOptions: CalendarOptions = {
+    locale: 'es', // Internacionalización a castellano
     initialView: 'dayGridMonth',
     plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
     selectable: true,
     editable: true,
+    height: '100%',
+    // Ajuste responsivo de la cabecera
     headerToolbar: {
       left: 'prev,next today',
       center: 'title',
       right: 'dayGridMonth,timeGridWeek'
+    },
+    // Mejora para móviles: que el día clicado abra la vista de semana
+    navLinks: true,
+    buttonText: {
+      today: 'Hoy',
+      month: 'Mes',
+      week: 'Semana',
+      day: 'Día'
     },
     dateClick: (info) => this.handleDateClick(info),
     eventClick: (info) => this.handleEventClick(info),
@@ -44,8 +54,8 @@ export class CalendarComponent implements OnInit {
   }
 
   async loadEvents() {
-    const eventos = await this.calendarService.getAllEvents();
-    this.calendarOptions = { ...this.calendarOptions, events: eventos };
+    const events = await this.calendarService.getAllEvents();
+    this.calendarOptions.events = events;
   }
 
   handleDateClick(info: any) {
@@ -53,7 +63,7 @@ export class CalendarComponent implements OnInit {
       title: '',
       start: info.dateStr + 'T09:00',
       end: info.dateStr + 'T10:00',
-      extendedProps: { volunteerName: '', patientName: '', category: '', notes: '' }
+      extendedProps: {}
     };
     this.isFormVisible = true;
   }
@@ -63,31 +73,26 @@ export class CalendarComponent implements OnInit {
       id: info.event.id,
       title: info.event.title,
       start: info.event.startStr,
-      end: info.event.endStr || info.event.startStr,
-      extendedProps: { ...info.event.extendedProps }
+      end: info.event.endStr,
+      extendedProps: info.event.extendedProps || {}
     };
     this.isFormVisible = true;
   }
 
   async handleEventChange(info: any) {
     const updatedEvent = {
+      id: info.event.id,
       title: info.event.title,
-      start: info.event.startStr, 
-      end: info.event.endStr || info.event.startStr,
+      start: info.event.startStr,
+      end: info.event.endStr,
       extendedProps: info.event.extendedProps
     };
-
-    try {
-      await this.calendarService.updateEvent(info.event.id, updatedEvent);
-    } catch (error) {
-      console.error("Error al persistir cambio, revirtiendo...", error);
-      info.revert();
-    }
+    await this.calendarService.updateEvent(updatedEvent.id, updatedEvent);
+    await this.loadEvents();
   }
 
-  async closeForm() {
+  closeForm() {
     this.isFormVisible = false;
-    this.selectedEvent = null;
-    await this.loadEvents();
+    this.loadEvents(); // Recargar para ver cambios
   }
 }

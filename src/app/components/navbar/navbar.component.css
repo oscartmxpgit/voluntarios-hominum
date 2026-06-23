@@ -5,40 +5,29 @@ nav {
   position: sticky; top: 0; z-index: 1000;
 }
 
-.icon { font-size: 1.8rem; }
-
 ul { display: flex; list-style: none; gap: 2rem; align-items: center; }
 
-a { 
-  color: #334155; text-decoration: none; font-weight: 600; 
-  transition: color 0.3s ease; cursor: pointer;
-}
-a:hover { color: #003366; }
-a.active { color: #003366; border-bottom: 2px solid #E6B800; padding-bottom: 4px; }
+.menu-toggle { display: none; background: none; border: none; font-size: 1.8rem; cursor: pointer; }
 
-.logout-btn { 
-  background: #f1f5f9; padding: 0.5rem 1rem; border-radius: 6px; color: #ef4444; 
-}
-.logout-btn:hover { background: #fee2e2; }
+/* ESTILOS RESPONSIVOS */
+@media (max-width: 768px) {
+  nav { padding: 1rem; }
+  
+  .menu-toggle { display: block; }
 
-/* Contenedor del logo */
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  text-decoration: none;
-  color: inherit;
+  ul {
+    position: absolute; top: 100%; left: 0; width: 100%;
+    flex-direction: column; background: white;
+    display: none; /* Oculto por defecto */
+    padding: 1rem 0; gap: 1rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+
+  ul.active { display: flex; }
 }
 
-/* Tamaño controlado para la imagen */
-.logo-img {
-  width: 32px;  /* Ajusta este valor según el tamaño de tu imagen */
-  height: 32px;
-  object-fit: contain;
-}
-
-.brand {
-  font-weight: 600;
-  font-size: 1.2rem;
-}
+/* Mantén tus estilos previos de a, .logo, .logout-btn aquí debajo... */
+a { color: #334155; text-decoration: none; font-weight: 600; cursor: pointer; }
+.logo { display: flex; align-items: center; gap: 12px; }
+.logo-img { width: 32px; height: 32px; object-fit: contain; }
+.logout-btn { background: #f1f5f9; padding: 0.5rem 1rem; border-radius: 6px; color: #ef4444; }

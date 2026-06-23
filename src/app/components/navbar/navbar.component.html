@@ -4,15 +4,17 @@
     <span class="brand">Hominum</span>
   </a>
 
-  <ul>
+  <button class="menu-toggle" (click)="toggleMenu()">☰</button>
+
+  <ul [class.active]="isMenuOpen">
     <ng-container *ngIf="authService.isLoggedIn()">
-      <li><a routerLink="/calendar" routerLinkActive="active">Calendario</a></li>
-      <li><a routerLink="/dashboard" routerLinkActive="active">Dashboard</a></li>
-      <li><a (click)="authService.logout()" class="logout-btn">Salir</a></li>
+      <li><a routerLink="/calendar" (click)="isMenuOpen=false">Calendario</a></li>
+      <li><a routerLink="/dashboard" (click)="isMenuOpen=false">Dashboard</a></li>
+      <li><a (click)="authService.logout(); isMenuOpen=false" class="logout-btn">Salir</a></li>
     </ng-container>
 
     <li *ngIf="!authService.isLoggedIn()">
-      <a routerLink="/login" routerLinkActive="active">Acceder</a>
+      <a routerLink="/login" (click)="isMenuOpen=false">Acceder</a>
     </li>
   </ul>
 </nav>
