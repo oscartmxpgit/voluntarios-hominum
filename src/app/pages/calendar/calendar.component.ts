@@ -20,79 +20,144 @@ export class CalendarComponent implements OnInit {
   isFormVisible = false;
   selectedEvent: any = null;
 
-  // En tu calendarOptions dentro de CalendarComponent
   calendarOptions: CalendarOptions = {
-    locale: 'es', // Internacionalización a castellano
+    locale: 'es',
     initialView: 'dayGridMonth',
     plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
     selectable: true,
     editable: true,
     height: '100%',
-    // Ajuste responsivo de la cabecera
+
     headerToolbar: {
       left: 'prev,next today',
       center: 'title',
       right: 'dayGridMonth,timeGridWeek'
     },
-    // Mejora para móviles: que el día clicado abra la vista de semana
+
     navLinks: true,
+
     buttonText: {
       today: 'Hoy',
       month: 'Mes',
       week: 'Semana',
       day: 'Día'
     },
+
     dateClick: (info) => this.handleDateClick(info),
     eventClick: (info) => this.handleEventClick(info),
     eventDrop: (info) => this.handleEventChange(info),
     eventResize: (info) => this.handleEventChange(info),
+
     events: []
   };
 
-  async ngOnInit() {
+  async ngOnInit(): Promise<void> {
     await this.loadEvents();
   }
 
-  async loadEvents() {
-    const events = await this.calendarService.getAllEvents();
-    this.calendarOptions.events = events;
+  async loadEvents(): Promise<void> {
+    try {
+      const googleEvents = await this.calendarService.getAllEvents();
+
+      const fullCalendarEvents = googleEvents.map(event => ({
+        id: event.id,
+        title: event.summary,
+
+        start:
+          event.start?.dateTime ||
+          event.start?.date,
+
+        end:
+          event.end?.dateTime ||
+          event.end?.date,
+
+        extendedProps:
+          event.extendedProperties?.private || {}
+      }));
+
+      this.calendarOptions = {
+        ...this.calendarOptions,
+        events: fullCalendarEvents
+      };
+
+      console.log('Eventos cargados:', fullCalendarEvents);
+    } catch (error) {
+      console.error('Error cargando eventos:', error);
+    }
   }
 
-  handleDateClick(info: any) {
+  handleDateClick(info: any): void {
     this.selectedEvent = {
       title: '',
-      start: info.dateStr + 'T09:00',
-      end: info.dateStr + 'T10:00',
-      extendedProps: {}
+      start: `${info.dateStr}T09:00`,
+      end: `${info.dateStr}T10:00`,
+      extendedProps: {
+        volunteerName: '',
+        category: 'General',
+        patientName: '',
+        notes: ''
+      }
     };
+
     this.isFormVisible = true;
   }
 
-  handleEventClick(info: any) {
+  handleEventClick(info: any): void {
     this.selectedEvent = {
       id: info.event.id,
       title: info.event.title,
-      start: info.event.startStr,
-      end: info.event.endStr,
-      extendedProps: info.event.extendedProps || {}
+
+      start: info.event.start
+        ? info.event.start.toISOString()
+        : null,
+
+      end: info.event.end
+        ? info.event.end.toISOString()
+        : null,
+
+      extendedProps: {
+        ...info.event.extendedProps
+      }
     };
+
     this.isFormVisible = true;
   }
 
-  async handleEventChange(info: any) {
-    const updatedEvent = {
-      id: info.event.id,
-      title: info.event.title,
-      start: info.event.startStr,
-      end: info.event.endStr,
-      extendedProps: info.event.extendedProps
-    };
-    await this.calendarService.updateEvent(updatedEvent.id, updatedEvent);
-    await this.loadEvents();
+  async handleEventChange(info: any): Promise<void> {
+    try {
+      const updatedEvent = {
+        id: info.event.id,
+        title: info.event.title,
+
+        start: info.event.start
+          ? info.event.start.toISOString()
+          : null,
+
+        end: info.event.end
+          ? info.event.end.toISOString()
+          : null,
+
+        extendedProps: {
+          ...info.event.extendedProps
+        }
+      };
+
+      await this.calendarService.updateEvent(
+        updatedEvent.id,
+        updatedEvent
+      );
+
+      await this.loadEvents();
+    } catch (error) {
+      console.error('Error actualizando evento:', error);
+      info.revert();
+    }
   }
 
-  closeForm() {
+  async closeForm(): Promise<void> {
     this.isFormVisible = false;
-    this.loadEvents(); // Recargar para ver cambios
+    this.selectedEvent = null;
+
+    await this.loadEvents();
   }
 }
