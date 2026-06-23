@@ -59,39 +59,45 @@ export class CalendarService {
   }
 
   async createEvent(eventDetails: any): Promise<any> {
+    // 1. Verificamos autorización
     const isAuthorized = await this.ensureAuthToken();
-    if (!isAuthorized) throw new Error('No autorizado.');
-
-    const w = window as any;
-    let userEmail = 'No disponible';
-
-    // Intento 1: Intentar obtener el perfil del usuario logueado vía gapi oficial
-    try {
-      if (w.gapi && w.gapi.auth2) {
-        const authInstance = w.gapi.auth2.getAuthInstance();
-        const currentUser = authInstance.currentUser.get();
-        if (currentUser && currentUser.getBasicProfile()) {
-          userEmail = currentUser.getBasicProfile().getEmail();
-        }
-      }
-    } catch (e) {
-      console.warn("No se pudo obtener el email vía gapi.auth2", e);
+    if (!isAuthorized) {
+      throw new Error('No autorizado.');
     }
+
+    // 2. Obtenemos el email directamente desde nuestro servicio de autenticación
+    // Esto elimina la dependencia inestable de gapi.auth2
+    const userEmail = this.authService.getUserEmail() || 'Desconocido';
 
     console.log("Guardando evento con Email:", userEmail);
 
+    // 3. Ejecutamos la petición a Google Calendar
+    const w = window as any;
     return await w.gapi.client.calendar.events.insert({
       calendarId: this.CALENDAR_ID,
       resource: {
         summary: eventDetails.title,
-        start: { dateTime: new Date(eventDetails.start).toISOString() },
-        end: { dateTime: new Date(eventDetails.end).toISOString() },
+
+        start: {
+          dateTime: new Date(eventDetails.start).toISOString()
+        },
+
+        end: {
+          dateTime: new Date(eventDetails.end).toISOString()
+        },
+
         extendedProperties: {
           private: {
             volunteerEmail: userEmail,
-            category: eventDetails.extendedProps?.category || 'General',
-            patientName: eventDetails.extendedProps?.patientName || '',
-            notes: eventDetails.extendedProps?.notes || ''
+
+            category:
+              eventDetails.extendedProps?.category || 'General',
+
+            patientName:
+              eventDetails.extendedProps?.patientName || '',
+
+            notes:
+              eventDetails.extendedProps?.notes || ''
           }
         }
       }
@@ -137,6 +143,17 @@ export class CalendarService {
           }
         }
       }
+    });
+  }
+
+  async deleteEvent(eventId: string): Promise<void> {
+    const isAuthorized = await this.ensureAuthToken();
+    if (!isAuthorized) throw new Error('No autorizado.');
+
+    const w = window as any;
+    await w.gapi.client.calendar.events.delete({
+      calendarId: this.CALENDAR_ID,
+      eventId: eventId
     });
   }
 }

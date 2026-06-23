@@ -14,6 +14,10 @@ export class AuthService {
 
   constructor(private ngZone: NgZone) { }
 
+  getUserEmail(): string {
+    return this.user()?.email || '';
+  }
+
   initializeAuth(elementId: string) {
     const checkGoogle = setInterval(() => {
       if (typeof google !== 'undefined' && google.accounts) {
@@ -92,7 +96,10 @@ export class AuthService {
   isLoggedIn(): boolean { return this.user() !== null; }
 
   private decodeToken(token: string) {
-    return JSON.parse(window.atob(token.split('.')[1]));
+    // Nota: el JWT de Google a veces tiene padding, este método es estándar para Google Identity
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(window.atob(base64));
   }
 
   private loadUserFromStorage(): User | null {

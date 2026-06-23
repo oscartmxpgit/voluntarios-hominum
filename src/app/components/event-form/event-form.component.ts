@@ -26,11 +26,21 @@ export class EventFormComponent {
   get eventData() { return this._eventData; }
 
   @Output() close = new EventEmitter<void>();
+
   private calendarService = inject(CalendarService);
+
+  @Output() delete = new EventEmitter<string>();
 
   @HostListener('document:keydown.escape', ['$event'])
   onKeydownHandler(event: KeyboardEvent) {
     this.close.emit();
+  }
+
+  onDelete() {
+    if (confirm('¿Estás seguro de que quieres eliminar este evento?')) {
+      // Emitimos explícitamente el ID del evento que guardamos en eventData
+      this.delete.emit(this.eventData.id);
+    }
   }
 
   onStartChange() {
@@ -48,7 +58,7 @@ export class EventFormComponent {
       // PREPARACIÓN PARA SUMMARY SERVICE:
       // Cuando guardamos, el CalendarService usa 'extendedProps' para crear 
       // la estructura 'extendedProperties.private' que SummaryService analiza.
-      
+
       if (this._eventData.id) {
         await this.calendarService.updateEvent(this._eventData.id, this._eventData);
       } else {

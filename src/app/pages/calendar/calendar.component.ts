@@ -122,6 +122,16 @@ export class CalendarComponent implements OnInit {
     this.isFormVisible = true;
   }
 
+  async handleDeleteEvent(eventId: string): Promise<void> {
+    try {
+      await this.calendarService.deleteEvent(eventId);
+      await this.closeForm(); // Esto oculta el modal y refresca eventos
+    } catch (error) {
+      console.error('Error eliminando evento:', error);
+      alert('No se pudo eliminar el evento.');
+    }
+  }
+
   async handleEventChange(info: any): Promise<void> {
     try {
       const updatedEvent = {

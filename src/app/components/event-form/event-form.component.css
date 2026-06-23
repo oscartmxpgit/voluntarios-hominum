@@ -1,7 +1,11 @@
 .modal-container {
-  background: rgba(0, 0, 0, 0.6); /* Fondo oscuro semitransparente */
+  background: rgba(0, 0, 0, 0.6);
+  /* Fondo oscuro semitransparente */
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -9,14 +13,15 @@
 }
 
 .modal-content {
-  background: white; /* AQUÍ ELIMINAMOS LA TRANSPARENCIA DEL MODAL */
+  background: white;
+  /* AQUÍ ELIMINAMOS LA TRANSPARENCIA DEL MODAL */
   padding: 25px;
   border-radius: 10px;
   width: 400px;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 input {
@@ -32,6 +37,35 @@ input {
   margin-top: 15px;
 }
 
-button { padding: 10px 20px; cursor: pointer; border: none; border-radius: 5px; }
-.btn-save { background: #28a745; color: white; }
-.btn-cancel { background: #dc3545; color: white; }
+button {
+  padding: 10px 20px;
+  cursor: pointer;
+  border: none;
+  border-radius: 5px;
+}
+
+.btn-save {
+  background: #28a745;
+  color: white;
+}
+
+.btn-cancel {
+  color: #721c24;
+}
+
+.btn-delete {
+  color: white;
+  background: #dc3545;
+}
+
+.btn-delete:hover {
+  background-color: #dc3545;
+  /* Rojo intenso al pasar el ratón */
+  color: white;
+  border-color: #dc3545;
+}
+
+.btn-delete:active {
+  transform: scale(0.98);
+  /* Pequeño efecto de clic */
+}
