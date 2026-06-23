@@ -8,46 +8,44 @@ import { CalendarEvent } from '../models/calendar-event';
 export class SummaryService {
   private calendarService = inject(CalendarService);
 
-  private hasCustomProperties(event: CalendarEvent): boolean {
-    const hasProps = !!event.extendedProperties?.private;
-
-    if (!hasProps) {
-      console.warn(
-        'Evento sin metadatos privados:',
-        event.summary
-      );
-    }
-
-    return hasProps;
-  }
-
   async getTotalStats() {
     const events = await this.calendarService.getAllEvents();
 
-    const validEvents = events.filter(event =>
-      this.hasCustomProperties(event)
+    const validEvents = events.filter(
+      event => !!event.extendedProperties?.private
     );
 
     return {
       totalVisits: validEvents.length,
+
       totalMonthlyHours:
         this.calculateTotalMonthlyHours(validEvents),
+
       hoursByCategory:
         this.calculateHoursByCategory(validEvents),
+
       hoursByVolunteer:
-        this.calculateHoursByVolunteer(validEvents)
+        this.calculateHoursByVolunteer(validEvents),
+
+      visitsByPatient:
+        this.calculateVisitsByPatient(validEvents),
+
+      hoursByPatient:
+        this.calculateHoursByPatient(validEvents)
     };
   }
 
   private getEventDuration(event: CalendarEvent): number {
     const startStr =
-      event.start?.dateTime || event.start?.date;
+      event.start?.dateTime ||
+      event.start?.date;
 
     const endStr =
-      event.end?.dateTime || event.end?.date;
+      event.end?.dateTime ||
+      event.end?.date;
 
     if (!startStr || !endStr) {
-      return 0;
+      return 1;
     }
 
     const start = new Date(startStr).getTime();
@@ -59,16 +57,11 @@ export class SummaryService {
     return hours > 0 ? hours : 1;
   }
 
-  private calculateHoursByVolunteer(
-    events: CalendarEvent[]
-  ) {
+  private calculateHoursByVolunteer(events: CalendarEvent[]) {
     return events.reduce((acc: any, event) => {
-      const props = event.extendedProperties?.private;
-
       const volunteer =
-        props?.volunteerName?.trim()
-          ? props.volunteerName
-          : 'Desconocido';
+        event.extendedProperties?.private?.volunteerName?.trim() ||
+        'Desconocido';
 
       acc[volunteer] =
         (acc[volunteer] || 0) +
@@ -78,14 +71,11 @@ export class SummaryService {
     }, {});
   }
 
-  private calculateHoursByCategory(
-    events: CalendarEvent[]
-  ) {
+  private calculateHoursByCategory(events: CalendarEvent[]) {
     return events.reduce((acc: any, event) => {
       const category =
-        event.extendedProperties?.private?.category?.trim()
-          ? event.extendedProperties.private.category
-          : 'General';
+        event.extendedProperties?.private?.category?.trim() ||
+        'General';
 
       acc[category] =
         (acc[category] || 0) +
@@ -95,9 +85,34 @@ export class SummaryService {
     }, {});
   }
 
-  private calculateTotalMonthlyHours(
-    events: CalendarEvent[]
-  ) {
+  private calculateVisitsByPatient(events: CalendarEvent[]) {
+    return events.reduce((acc: any, event) => {
+      const patient =
+        event.extendedProperties?.private?.patientName?.trim() ||
+        'Sin asignar';
+
+      acc[patient] =
+        (acc[patient] || 0) + 1;
+
+      return acc;
+    }, {});
+  }
+
+  private calculateHoursByPatient(events: CalendarEvent[]) {
+    return events.reduce((acc: any, event) => {
+      const patient =
+        event.extendedProperties?.private?.patientName?.trim() ||
+        'Sin asignar';
+
+      acc[patient] =
+        (acc[patient] || 0) +
+        this.getEventDuration(event);
+
+      return acc;
+    }, {});
+  }
+
+  private calculateTotalMonthlyHours(events: CalendarEvent[]) {
     const now = new Date();
 
     return events

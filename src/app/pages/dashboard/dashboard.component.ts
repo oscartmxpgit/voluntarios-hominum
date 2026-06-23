@@ -5,8 +5,12 @@ import { SummaryService } from '../../services/summary.service';
 interface DashboardStats {
   totalVisits: number;
   totalMonthlyHours: number;
+
   hoursByCategory: Record<string, number>;
   hoursByVolunteer: Record<string, number>;
+
+  visitsByPatient: Record<string, number>;
+  hoursByPatient: Record<string, number>;
 }
 
 @Component({
@@ -18,9 +22,9 @@ interface DashboardStats {
 })
 export class DashboardComponent implements OnInit {
   private summaryService = inject(SummaryService);
-  
+
   stats: DashboardStats | null = null;
-  loading: boolean = true;
+  loading = true;
 
   async ngOnInit(): Promise<void> {
     await this.loadDashboardData();
@@ -28,7 +32,7 @@ export class DashboardComponent implements OnInit {
 
   private async loadDashboardData(): Promise<void> {
     try {
-      this.stats = await this.summaryService.getTotalStats() as DashboardStats;
+      this.stats = await this.summaryService.getTotalStats();
     } catch (error) {
       console.error('Error al cargar estadísticas:', error);
     } finally {

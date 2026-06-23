@@ -2,36 +2,57 @@
   <h2>Panel de Control - Coordinación</h2>
 
   @if (loading) {
-    <div class="loading">Cargando estadísticas...</div>
+  <div class="loading">Cargando estadísticas...</div>
   } @else if (stats) {
-    <div class="stats-grid">
-      <section class="card">
-        <h3>Total Visitas</h3>
-        <p class="big-number">{{ stats.totalVisits }}</p>
-      </section>
+  <div class="stats-grid">
+    <section class="card">
+      <h3>Total Visitas</h3>
+      <p class="big-number">{{ stats.totalVisits }}</p>
+    </section>
 
-      <section class="card">
-        <h3>Horas este mes</h3>
-        <p class="big-number">{{ stats.totalMonthlyHours | number:'1.1-1' }}h</p>
-      </section>
+    <section class="card">
+      <h3>Horas este mes</h3>
+      <p class="big-number">{{ stats.totalMonthlyHours | number:'1.1-1' }}h</p>
+    </section>
 
-      <section class="card">
-        <h3>Horas por Categoría</h3>
-        <ul>
-          @for (item of stats.hoursByCategory | keyvalue; track item.key) {
-            <li>{{ item.key }} <span class="val-badge">{{ item.value | number:'1.1-1' }}h</span></li>
-          }
-        </ul>
-      </section>
+    <section class="card">
+      <h3>Visitas por Paciente</h3>
 
-      <section class="card">
-        <h3>Horas por Voluntario</h3>
-        <ul>
-          @for (item of stats.hoursByVolunteer | keyvalue; track item.key) {
-            <li>{{ item.key }} <span class="val-badge">{{ item.value | number:'1.1-1' }}h</span></li>
-          }
-        </ul>
-      </section>
-    </div>
+      <ul>
+        @for (item of stats.visitsByPatient | keyvalue; track item.key) {
+        <li>
+          {{ item.key }}
+          <span class="val-badge">
+            {{ item.value }}
+          </span>
+        </li>
+        }
+      </ul>
+    </section>
+
+    <section class="card">
+      <h3>Horas por Paciente</h3>
+
+      <ul>
+        @for (item of stats.hoursByPatient | keyvalue; track item.key) {
+        <li>
+          {{ item.key }}
+          <span class="val-badge">
+            {{ item.value | number:'1.1-1' }}h
+          </span>
+        </li>
+        }
+      </ul>
+    </section>
+
+    <section class="card">
+      <h3>Horas por Voluntario</h3>
+      <ul>
+        @for (item of stats.hoursByVolunteer | keyvalue; track item.key) {
+        <li>{{ item.key }} <span class="val-badge">{{ item.value | number:'1.1-1' }}h</span></li>
+        }
+      </ul>
+    </section>
+  </div>
   }
 </div>
