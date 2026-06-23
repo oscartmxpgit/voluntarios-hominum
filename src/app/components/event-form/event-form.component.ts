@@ -10,26 +10,29 @@ import { CalendarService } from '../../services/calendar.service';
   styleUrls: ['./event-form.component.css']
 })
 export class EventFormComponent {
+
   private _eventData: any = {};
 
   @Input() set eventData(value: any) {
-    // Clonación profunda y segura para evitar errores de extensibilidad
+    const safeValue = value || {};
+
+    // FIX: evitar slice(0,16) que rompe fechas
     this._eventData = {
-      ...value,
-      start: value.start ? new Date(value.start).toISOString().slice(0, 16) : '',
-      end: value.end ? new Date(value.end).toISOString().slice(0, 16) : '',
-      // Aseguramos que extendedProps sea un objeto nuevo, independiente de la referencia original
-      extendedProps: value.extendedProps ? { ...value.extendedProps } : {}
+      ...safeValue,
+      start: safeValue.start ? this.toLocalInput(safeValue.start) : '',
+      end: safeValue.end ? this.toLocalInput(safeValue.end) : '',
+      extendedProps: safeValue.extendedProps ? { ...safeValue.extendedProps } : {}
     };
   }
 
-  get eventData() { return this._eventData; }
+  get eventData() {
+    return this._eventData;
+  }
 
   @Output() close = new EventEmitter<void>();
+  @Output() delete = new EventEmitter<string>();
 
   private calendarService = inject(CalendarService);
-
-  @Output() delete = new EventEmitter<string>();
 
   @HostListener('document:keydown.escape', ['$event'])
   onKeydownHandler(event: KeyboardEvent) {
@@ -38,36 +41,60 @@ export class EventFormComponent {
 
   onDelete() {
     if (confirm('¿Estás seguro de que quieres eliminar este evento?')) {
-      // Emitimos explícitamente el ID del evento que guardamos en eventData
-      this.delete.emit(this.eventData.id);
+      if (this.eventData?.id) {
+        this.delete.emit(this.eventData.id);
+      }
     }
   }
 
   onStartChange() {
     if (this._eventData.start) {
       const startDate = new Date(this._eventData.start);
+
       if (!isNaN(startDate.getTime())) {
         startDate.setHours(startDate.getHours() + 1);
-        this._eventData.end = startDate.toISOString().slice(0, 16);
+        this._eventData.end = this.toLocalInput(startDate);
       }
     }
   }
 
   async save() {
     try {
-      // PREPARACIÓN PARA SUMMARY SERVICE:
-      // Cuando guardamos, el CalendarService usa 'extendedProps' para crear 
-      // la estructura 'extendedProperties.private' que SummaryService analiza.
+
+      const start = new Date(this._eventData.start);
+      const end = new Date(this._eventData.end);
+
+      // FIX CRÍTICO: evitar Google Calendar 400
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        throw new Error('Fechas inválidas');
+      }
+
+      if (end <= start) {
+        throw new Error('La fecha fin debe ser posterior a la de inicio');
+      }
 
       if (this._eventData.id) {
         await this.calendarService.updateEvent(this._eventData.id, this._eventData);
       } else {
         await this.calendarService.createEvent(this._eventData);
       }
+
       this.close.emit();
+
     } catch (error) {
       console.error("Error al guardar:", error);
       alert("Error al guardar. Verifica la consola.");
     }
+  }
+
+  // FIX IMPORTANTE: formato correcto para datetime-local
+  private toLocalInput(date: string | Date) {
+    const d = new Date(date);
+
+    if (isNaN(d.getTime())) return '';
+
+    const pad = (n: number) => n.toString().padStart(2, '0');
+
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
 }

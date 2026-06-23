@@ -6,6 +6,7 @@ declare var gapi: any;
 
 @Injectable({ providedIn: 'root' })
 export class CalendarService {
+
   private authService = inject(AuthService);
   private readonly CALENDAR_ID = environment.calendarId;
 
@@ -36,68 +37,61 @@ export class CalendarService {
       singleEvents: true
     });
 
-    return response.result.items.map((item: any) =>
+    return (response.result.items || []).map((item: any) =>
       this.mapToFullCalendarEvent(item)
     );
   }
 
   private mapToFullCalendarEvent(item: any) {
-
     return {
       id: item.id,
       summary: item.summary || '(Sin título)',
       title: item.summary || '(Sin título)',
 
-      // IMPORTANTE: mantener formato Google Calendar
       start: item.start,
       end: item.end,
 
       extendedProperties: item.extendedProperties,
-
       extendedProps: item.extendedProperties?.private || {}
     };
   }
 
   async createEvent(eventDetails: any): Promise<any> {
-    // 1. Verificamos autorización
     const isAuthorized = await this.ensureAuthToken();
-    if (!isAuthorized) {
-      throw new Error('No autorizado.');
-    }
+    if (!isAuthorized) throw new Error('No autorizado.');
 
-    // 2. Obtenemos el email directamente desde nuestro servicio de autenticación
-    // Esto elimina la dependencia inestable de gapi.auth2
     const userEmail = this.authService.getUserEmail() || 'Desconocido';
 
     console.log("Guardando evento con Email:", userEmail);
 
-    // 3. Ejecutamos la petición a Google Calendar
     const w = window as any;
+
+    const start = new Date(eventDetails.start);
+    const end = new Date(eventDetails.end);
+
+    // FIX CRÍTICO: evitar Google 400 (timeRangeEmpty)
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      throw new Error('Fechas inválidas');
+    }
+
+    if (end <= start) {
+      throw new Error('Rango de fechas inválido');
+    }
+
     return await w.gapi.client.calendar.events.insert({
       calendarId: this.CALENDAR_ID,
       resource: {
         summary: eventDetails.title,
 
-        start: {
-          dateTime: new Date(eventDetails.start).toISOString()
-        },
-
-        end: {
-          dateTime: new Date(eventDetails.end).toISOString()
-        },
+        start: { dateTime: start.toISOString() },
+        end: { dateTime: end.toISOString() },
 
         extendedProperties: {
           private: {
             volunteerEmail: userEmail,
-
-            category:
-              eventDetails.extendedProps?.category || 'General',
-
-            patientName:
-              eventDetails.extendedProps?.patientName || '',
-
-            notes:
-              eventDetails.extendedProps?.notes || ''
+            category: eventDetails.extendedProps?.category || 'General',
+            patientName: eventDetails.extendedProps?.patientName || '',
+            notes: eventDetails.extendedProps?.notes || ''
           }
         }
       }
@@ -106,12 +100,21 @@ export class CalendarService {
 
   async updateEvent(eventId: string, eventDetails: any): Promise<any> {
     const isAuthorized = await this.ensureAuthToken();
-
-    if (!isAuthorized) {
-      throw new Error('No autorizado.');
-    }
+    if (!isAuthorized) throw new Error('No autorizado.');
 
     const w = window as any;
+
+    const start = new Date(eventDetails.start);
+    const end = new Date(eventDetails.end);
+
+    // FIX CRÍTICO: evita PATCH con rango vacío
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      throw new Error('Fechas inválidas');
+    }
+
+    if (end <= start) {
+      throw new Error('La fecha fin debe ser posterior a la de inicio');
+    }
 
     return await w.gapi.client.calendar.events.patch({
       calendarId: this.CALENDAR_ID,
@@ -119,13 +122,8 @@ export class CalendarService {
       resource: {
         summary: eventDetails.title,
 
-        start: {
-          dateTime: new Date(eventDetails.start).toISOString()
-        },
-
-        end: {
-          dateTime: new Date(eventDetails.end).toISOString()
-        },
+        start: { dateTime: start.toISOString() },
+        end: { dateTime: end.toISOString() },
 
         extendedProperties: {
           private: {
@@ -151,9 +149,10 @@ export class CalendarService {
     if (!isAuthorized) throw new Error('No autorizado.');
 
     const w = window as any;
+
     await w.gapi.client.calendar.events.delete({
       calendarId: this.CALENDAR_ID,
-      eventId: eventId
+      eventId
     });
   }
 }
