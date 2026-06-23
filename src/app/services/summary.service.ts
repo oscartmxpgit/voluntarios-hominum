@@ -10,7 +10,6 @@ export class SummaryService {
 
   async getTotalStats() {
     const events = await this.calendarService.getAllEvents();
-    console.log("Eventos recibidos en SummaryService:", events); // DEPURACIÓN
     const validEvents = events.filter(
       event => !!event.extendedProperties?.private
     );

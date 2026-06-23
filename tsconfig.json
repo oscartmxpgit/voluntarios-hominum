@@ -23,9 +23,5 @@
     "strictInjectionParameters": true,
     "strictInputAccessModifiers": true,
     "strictTemplates": true
-  },
-  "files": [
-    "main.ts",
-    "google.d.ts" 
-  ]
+  }
 }

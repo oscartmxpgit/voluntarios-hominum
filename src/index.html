@@ -3,18 +3,27 @@
 <head>
   <meta charset="utf-8">
   <title>VoluntariosHominum</title>
+
   <base href="/">
+
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  
+
+  <!-- 🔥 FIX COOP / POPUPS (Google OAuth) -->
+  <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin-allow-popups">
+
   <link rel="icon" type="image/x-icon" href="assets/handshake.png">
-  
+
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
+
 <body class="mat-typography">
   <app-root></app-root>
-  
+
+  <!-- 🔥 Google Identity Services (OBLIGATORIO primero) -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <!-- 🔥 Google API client (Calendar etc.) -->
   <script src="https://apis.google.com/js/api.js" async defer></script>
 </body>
 </html>
