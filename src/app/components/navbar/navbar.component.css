@@ -31,3 +31,23 @@ a { color: #334155; text-decoration: none; font-weight: 600; cursor: pointer; }
 .logo { display: flex; align-items: center; gap: 12px; }
 .logo-img { width: 32px; height: 32px; object-fit: contain; }
 .logout-btn { background: #f1f5f9; padding: 0.5rem 1rem; border-radius: 6px; color: #ef4444; }
+
+/* Estilo base para todos los enlaces */
+a { 
+  color: #334155; 
+  text-decoration: none; 
+  font-weight: 600; 
+  transition: color 0.3s ease; 
+  cursor: pointer;
+  padding-bottom: 4px; /* Espacio para el borde */
+  border-bottom: 2px solid transparent; /* Inicialmente invisible */
+}
+
+/* Estilo cuando el enlace está activo */
+a.active { 
+  color: #003366; 
+  border-bottom: 2px solid #E6B800; /* Color del subrayado */
+}
+
+/* Aseguramos que el logo no se subraye por error */
+.logo.active { border-bottom: none; }

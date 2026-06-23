@@ -13,7 +13,6 @@ export function initializeGoogleAuth(): Promise<void> {
             // No necesitamos API_KEY si usamos el token de identidad (OIDC)
             discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"]
           }).then(() => {
-            console.log("GAPI Client inicializado");
             resolve();
           });
         });

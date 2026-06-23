@@ -80,7 +80,6 @@ export class CalendarComponent implements OnInit {
         events: fullCalendarEvents
       };
 
-      console.log('Eventos cargados:', fullCalendarEvents);
     } catch (error) {
       console.error('Error cargando eventos:', error);
     }

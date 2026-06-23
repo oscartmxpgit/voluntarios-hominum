@@ -36,17 +36,12 @@ export class CalendarService {
       singleEvents: true
     });
 
-    if (response.result.items?.length > 0) {
-      console.log('ESTRUCTURA DEL EVENTO RECIBIDO:', response.result.items[0]);
-    }
-
     return response.result.items.map((item: any) =>
       this.mapToFullCalendarEvent(item)
     );
   }
 
   private mapToFullCalendarEvent(item: any) {
-    console.log('DEPURACIÓN FECHA:', item.id, item.start);
 
     return {
       id: item.id,

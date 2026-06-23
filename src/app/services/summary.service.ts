@@ -24,30 +24,6 @@ export class SummaryService {
   async getTotalStats() {
     const events = await this.calendarService.getAllEvents();
 
-    console.log('--- INSPECCIÓN DE EVENTOS ---');
-
-    events.forEach(event => {
-      console.log('Evento:', event.summary);
-      console.log(
-        'Props privadas:',
-        event.extendedProperties?.private
-      );
-      console.log(
-        'Start:',
-        event.start?.dateTime || event.start?.date
-      );
-    });
-
-    console.table(
-      events.map(event => ({
-        summary: event.summary,
-        hasPrivate: !!event.extendedProperties?.private,
-        volunteer:
-          event.extendedProperties?.private?.volunteerName ||
-          'VACÍO'
-      }))
-    );
-
     const validEvents = events.filter(event =>
       this.hasCustomProperties(event)
     );
