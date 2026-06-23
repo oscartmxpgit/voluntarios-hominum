@@ -10,7 +10,7 @@ export class SummaryService {
 
   async getTotalStats() {
     const events = await this.calendarService.getAllEvents();
-
+    console.log("Eventos recibidos en SummaryService:", events); // DEPURACIÓN
     const validEvents = events.filter(
       event => !!event.extendedProperties?.private
     );
@@ -60,7 +60,7 @@ export class SummaryService {
   private calculateHoursByVolunteer(events: CalendarEvent[]) {
     return events.reduce((acc: any, event) => {
       const volunteer =
-        event.extendedProperties?.private?.volunteerName?.trim() ||
+        event.extendedProperties?.private?.volunteerEmail?.trim() ||
         'Desconocido';
 
       acc[volunteer] =

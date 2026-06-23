@@ -91,7 +91,7 @@ export class CalendarComponent implements OnInit {
       start: `${info.dateStr}T09:00`,
       end: `${info.dateStr}T10:00`,
       extendedProps: {
-        volunteerName: '',
+        volunteerEmail: '',
         category: 'General',
         patientName: '',
         notes: ''

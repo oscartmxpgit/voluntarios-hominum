@@ -60,39 +60,38 @@ export class CalendarService {
 
   async createEvent(eventDetails: any): Promise<any> {
     const isAuthorized = await this.ensureAuthToken();
-
-    if (!isAuthorized) {
-      throw new Error('No autorizado.');
-    }
+    if (!isAuthorized) throw new Error('No autorizado.');
 
     const w = window as any;
+    let userEmail = 'No disponible';
+
+    // Intento 1: Intentar obtener el perfil del usuario logueado vía gapi oficial
+    try {
+      if (w.gapi && w.gapi.auth2) {
+        const authInstance = w.gapi.auth2.getAuthInstance();
+        const currentUser = authInstance.currentUser.get();
+        if (currentUser && currentUser.getBasicProfile()) {
+          userEmail = currentUser.getBasicProfile().getEmail();
+        }
+      }
+    } catch (e) {
+      console.warn("No se pudo obtener el email vía gapi.auth2", e);
+    }
+
+    console.log("Guardando evento con Email:", userEmail);
 
     return await w.gapi.client.calendar.events.insert({
       calendarId: this.CALENDAR_ID,
       resource: {
         summary: eventDetails.title,
-
-        start: {
-          dateTime: new Date(eventDetails.start).toISOString()
-        },
-
-        end: {
-          dateTime: new Date(eventDetails.end).toISOString()
-        },
-
+        start: { dateTime: new Date(eventDetails.start).toISOString() },
+        end: { dateTime: new Date(eventDetails.end).toISOString() },
         extendedProperties: {
           private: {
-            volunteerName:
-              eventDetails.extendedProps?.volunteerName || 'Desconocido',
-
-            category:
-              eventDetails.extendedProps?.category || 'General',
-
-            patientName:
-              eventDetails.extendedProps?.patientName || '',
-
-            notes:
-              eventDetails.extendedProps?.notes || ''
+            volunteerEmail: userEmail,
+            category: eventDetails.extendedProps?.category || 'General',
+            patientName: eventDetails.extendedProps?.patientName || '',
+            notes: eventDetails.extendedProps?.notes || ''
           }
         }
       }
@@ -124,8 +123,8 @@ export class CalendarService {
 
         extendedProperties: {
           private: {
-            volunteerName:
-              eventDetails.extendedProps?.volunteerName || 'Desconocido',
+            volunteerEmail:
+              eventDetails.extendedProps?.volunteerEmail || 'Desconocido',
 
             category:
               eventDetails.extendedProps?.category || 'General',

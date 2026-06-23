@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SummaryService } from '../../services/summary.service';
+import { FormatDurationPipe } from '../../pipes/duration.pipe';
 
 interface DashboardStats {
   totalVisits: number;
@@ -16,7 +17,7 @@ interface DashboardStats {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormatDurationPipe],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })

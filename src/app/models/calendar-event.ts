@@ -6,7 +6,6 @@ export interface CalendarEvent {
   extendedProperties?: {
     private?: {
       volunteerEmail?: string;
-      volunteerName?: string;
       patientName?: string;
       category?: string;
       notes?: string;
