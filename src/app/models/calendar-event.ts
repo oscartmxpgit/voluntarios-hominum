@@ -1,14 +1,15 @@
 export interface CalendarEvent {
   id?: string;
-  summary: string;
-  start: { dateTime?: string, date?: string };
-  end: { dateTime?: string, date?: string };
-  extendedProperties?: {
-    private?: {
-      volunteerEmail?: string;
-      patientName?: string;
-      category?: string;
-      notes?: string;
-    }
-  };
+
+  volunteer_email: string;
+
+  task_name: string;
+
+  start_datetime: string;
+
+  end_datetime: string;
+
+  patient_name: string;
+
+  comments: string;
 }

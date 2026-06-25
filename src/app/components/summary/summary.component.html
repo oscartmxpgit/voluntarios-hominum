@@ -1,8 +1,12 @@
 <div class="summary-container">
   <h3>Resumen de Actividad</h3>
+  <p>Total Visitas: {{ stats?.totalVisits }}</p>
+  <p>Horas este mes: {{ formatHours(stats?.totalMonthlyHours) }}</p>
+
+  <h4>Horas por Voluntario:</h4>
   <ul>
-    <li *ngFor="let item of data">
-      {{ item.category }}: {{ item.hours }} h
+    <li *ngFor="let v of getObjectKeys(stats?.hoursByVolunteer)">
+      {{ v }}: {{ formatHours(stats.hoursByVolunteer[v]) }}
     </li>
   </ul>
 </div>

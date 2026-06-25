@@ -4,6 +4,7 @@ import { CalendarOptions } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
+
 import { CalendarService } from '../../services/calendar.service';
 import { EventFormComponent } from '../../components/event-form/event-form.component';
 import { AuthService } from '../../services/auth.service';
@@ -16,17 +17,21 @@ import { AuthService } from '../../services/auth.service';
   styleUrls: ['./calendar.component.css']
 })
 export class CalendarComponent implements OnInit {
+
   private calendarService = inject(CalendarService);
   private authService = inject(AuthService);
 
   isFormVisible = false;
   selectedEvent: any = null;
+  private rawEvents: any[] = [];
 
   calendarOptions: CalendarOptions = {
     locale: 'es',
     allDayText: 'Todo el día',
+
     initialView: 'dayGridMonth',
     plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
+
     selectable: true,
     editable: true,
     height: '100%',
@@ -51,6 +56,12 @@ export class CalendarComponent implements OnInit {
     eventDrop: (info) => this.handleEventChange(info),
     eventResize: (info) => this.handleEventChange(info),
 
+    eventDataTransform: (event) => ({
+      ...event,
+      title: String(event.title ?? ''),
+      id: String(event.id ?? '')
+    }),
+
     events: []
   };
 
@@ -59,120 +70,90 @@ export class CalendarComponent implements OnInit {
   }
 
   async loadEvents(): Promise<void> {
-    try {
-      const googleEvents = await this.calendarService.getAllEvents();
-      const currentUserEmail = this.authService.getUserEmail();
-      const isCoordinator = this.authService.user()?.isCoordinator || false;
 
-      const filteredEvents = googleEvents.filter(event => {
-        // Si es coordinador, ve todo
-        if (isCoordinator) return true;
-        
-        // Si no, solo ve los eventos donde su email coincide
-        const eventVolunteerEmail = event.extendedProperties?.private?.volunteerEmail;
-        return eventVolunteerEmail === currentUserEmail;
-      });
+    const allEvents = await this.calendarService.getAllEvents();
 
-      const fullCalendarEvents = filteredEvents.map(event => ({
-        id: event.id,
-        title: event.summary,
-        start: event.start?.dateTime || event.start?.date,
-        end: event.end?.dateTime || event.end?.date,
-        extendedProps: event.extendedProperties?.private || {}
-      }));
+    const userEmail = this.authService.getUserEmail();
+    const isCoordinator = this.authService.user()?.isCoordinator;
 
-      this.calendarOptions = {
-        ...this.calendarOptions,
-        events: fullCalendarEvents
-      };
+    this.rawEvents = allEvents.filter(e =>
+      isCoordinator ? true : e.volunteer_email === userEmail
+    );
 
-    } catch (error) {
-      console.error('Error cargando eventos:', error);
-    }
+    console.log('EVENTS FINAL:', this.rawEvents.map(e => ({
+      id: e.id,
+      task_name: e.task_name,
+      start: e.start_datetime,
+      end: e.end_datetime
+    })));
+
+    const mappedEvents = this.rawEvents.map(e => ({
+      id: String(e.id),
+      title: String(e.task_name ?? ''),
+      start: e.start_datetime,
+      end: e.end_datetime
+    }));
+
+    this.calendarOptions = {
+      ...this.calendarOptions,
+      events: mappedEvents
+    };
   }
 
   handleDateClick(info: any): void {
+
+    const start = new Date(info.date);
+    const end = new Date(start);
+    end.setHours(end.getHours() + 1);
+
     this.selectedEvent = {
-      title: '',
-      start: `${info.dateStr}T09:00`,
-      end: `${info.dateStr}T10:00`,
-      extendedProps: {
-        volunteerEmail: '',
-        category: 'General',
-        patientName: '',
-        notes: ''
-      }
+      task_name: '',
+      start_datetime: start,
+      end_datetime: end,
+      patient_name: '',
+      comments: ''
     };
 
     this.isFormVisible = true;
   }
 
   handleEventClick(info: any): void {
-    this.selectedEvent = {
-      id: info.event.id,
-      title: info.event.title,
 
-      start: info.event.start
-        ? info.event.start.toISOString()
-        : null,
+    const event = this.rawEvents.find(e => e.id == info.event.id);
+    if (!event) return;
 
-      end: info.event.end
-        ? info.event.end.toISOString()
-        : null,
-
-      extendedProps: {
-        ...info.event.extendedProps
-      }
-    };
-
+    this.selectedEvent = { ...event };
     this.isFormVisible = true;
   }
 
-  async handleDeleteEvent(eventId: string): Promise<void> {
+  async handleEventChange(info: any): Promise<void> {
+
     try {
-      await this.calendarService.deleteEvent(eventId);
-      await this.closeForm(); // Esto oculta el modal y refresca eventos
-    } catch (error) {
-      console.error('Error eliminando evento:', error);
-      alert('No se pudo eliminar el evento.');
+
+      await this.calendarService.updateEvent(info.event.id, {
+        task_name: info.event.title,
+        start_datetime: info.event.start,
+        end_datetime: info.event.end,
+        patient_name: '',
+        comments: ''
+      });
+
+      await this.loadEvents();
+
+    } catch (e) {
+      console.error(e);
+      info.revert();
     }
   }
 
-  async handleEventChange(info: any): Promise<void> {
-    try {
-      const updatedEvent = {
-        id: info.event.id,
-        title: info.event.title,
-
-        start: info.event.start
-          ? info.event.start.toISOString()
-          : null,
-
-        end: info.event.end
-          ? info.event.end.toISOString()
-          : null,
-
-        extendedProps: {
-          ...info.event.extendedProps
-        }
-      };
-
-      await this.calendarService.updateEvent(
-        updatedEvent.id,
-        updatedEvent
-      );
-
-      await this.loadEvents();
-    } catch (error) {
-      console.error('Error actualizando evento:', error);
-      info.revert();
-    }
+  async handleDeleteEvent(id: string): Promise<void> {
+    await this.calendarService.deleteEvent(id);
+    await this.closeForm();
   }
 
   async closeForm(): Promise<void> {
     this.isFormVisible = false;
     this.selectedEvent = null;
-
     await this.loadEvents();
   }
 }

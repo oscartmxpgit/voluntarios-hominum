@@ -1,24 +1,64 @@
 <div class="modal-container">
   <div class="modal-content">
-    <h3>{{ eventData.id ? 'Editar Evento' : 'Nuevo Evento' }}</h3>
+
+    <h3>
+      {{ eventData.id ? 'Editar Evento' : 'Nuevo Evento' }}
+    </h3>
 
     <label>Título</label>
-    <input [(ngModel)]="eventData.title" placeholder="Título">
+    <input
+      [(ngModel)]="eventData.task_name"
+      placeholder="Título"
+    />
 
     <label>Inicio</label>
-    <input type="datetime-local" [(ngModel)]="eventData.start" (change)="onStartChange()">
+    <input
+      type="datetime-local"
+      [(ngModel)]="eventData.start_datetime"
+      (change)="onStartChange()"
+    />
 
     <label>Fin</label>
-    <input type="datetime-local" [(ngModel)]="eventData.end">
+    <input
+      type="datetime-local"
+      [(ngModel)]="eventData.end_datetime"
+    />
 
     <label>Paciente</label>
-    <input [(ngModel)]="eventData.extendedProps.patientName" placeholder="Nombre paciente">
+    <input
+      [(ngModel)]="eventData.patient_name"
+      placeholder="Nombre paciente"
+    />
+
+    <label>Observaciones</label>
+    <textarea
+      [(ngModel)]="eventData.comments"
+      placeholder="Notas adicionales..."
+    ></textarea>
 
     <div class="actions">
-      <button class="btn-save" (click)="save()">Guardar</button>
+
+      <button class="btn-save" (click)="save()">
+        Guardar
+      </button>
+
       @if (eventData?.id) {
-      <button type="button" class="btn-delete" (click)="onDelete()">Eliminar evento</button>
-      } <button class="btn-cancel" (click)="close.emit()">Cancelar</button>
+        <button
+          type="button"
+          class="btn-delete"
+          (click)="onDelete()"
+        >
+          Eliminar
+        </button>
+      }
+
+      <button
+        class="btn-cancel"
+        (click)="close.emit()"
+      >
+        Cancelar
+      </button>
+
     </div>
   </div>
 </div>

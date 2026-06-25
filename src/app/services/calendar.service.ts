@@ -1,161 +1,94 @@
 import { Injectable, inject } from '@angular/core';
-import { AuthService } from './auth.service';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { AuthService } from './auth.service';
 
-declare var gapi: any;
-
-@Injectable({ providedIn: 'root' })
+@Injectable({
+  providedIn: 'root'
+})
 export class CalendarService {
+
+  private http = inject(HttpClient);
   private authService = inject(AuthService);
-  private readonly CALENDAR_ID = environment.calendarId;
-
-  private async ensureAuthToken(): Promise<boolean> {
-    const token = this.authService.getToken();
-    const w = window as any;
-
-    if (!token) {
-      await this.authService.requestCalendarAccess();
-      return !!this.authService.getToken();
-    }
-
-    if (w.gapi?.client) {
-      w.gapi.client.setToken({ access_token: token });
-      return true;
-    }
-    return false;
-  }
-
-  // 🔥 VALIDACIÓN DE SEGURIDAD: Solo coordinadores o voluntarios en la lista blanca
-  private checkPermission(): void {
-    const email = this.authService.getUserEmail();
-    const isCoordinator = environment.coordinators.includes(email);
-    const isVolunteer = environment.volunteers.includes(email);
-
-    if (!isCoordinator && !isVolunteer) {
-      throw new Error('Acceso denegado: Usuario no autorizado para modificar el calendario.');
-    }
-  }
-
-  private handleApiError(error: any): never {
-    if (error.status === 401 || error.result?.error?.code === 401) {
-      console.warn("Token expirado o inválido. Redirigiendo a home...");
-      this.authService.logout(); 
-      window.location.href = '/'; 
-    }
-    throw error;
-  }
+  private readonly API_URL = environment.apiUrl;
 
   async getAllEvents(): Promise<any[]> {
-    try {
-      await this.ensureAuthToken();
-      const w = window as any;
-      const response = await w.gapi.client.calendar.events.list({
-        calendarId: this.CALENDAR_ID,
-        singleEvents: true
-      });
-      return (response.result.items || []).map((item: any) => this.mapToFullCalendarEvent(item));
-    } catch (error) {
-      return this.handleApiError(error);
-    }
+    return await firstValueFrom(
+      this.http.get<any[]>(`${this.API_URL}/time-entries`)
+    );
   }
 
-  private mapToFullCalendarEvent(item: any) {
+  async createEvent(event: any): Promise<any> {
+    const payload = this.mapToApi(event);
+    return await firstValueFrom(
+      this.http.post(`${this.API_URL}/time-entries`, payload)
+    );
+  }
+
+  async updateEvent(id: string, event: any): Promise<any> {
+    const payload = this.mapToApi(event);
+    return await firstValueFrom(
+      this.http.put(`${this.API_URL}/time-entries/${id}`, payload)
+    );
+  }
+
+  async deleteEvent(id: string): Promise<void> {
+    await firstValueFrom(
+      this.http.delete(`${this.API_URL}/time-entries/${id}`)
+    );
+  }
+
+  getCurrentUserEmail(): string {
+    return this.authService.getUserEmail() ?? '';
+  }
+
+  // =========================
+  // 🔥 FIX PRINCIPAL AQUÍ
+  // =========================
+  private mapToApi(event: any) {
+
+    const start = this.safeDate(event.start || event.start_datetime);
+    const end = this.safeDate(event.end || event.end_datetime);
+
+    if (!start || !end) {
+      throw new Error('Fechas inválidas en evento');
+    }
+
     return {
-      id: item.id,
-      summary: item.summary || '(Sin título)',
-      title: item.summary || '(Sin título)',
-      start: item.start,
-      end: item.end,
-      extendedProperties: item.extendedProperties,
-      extendedProps: item.extendedProperties?.private || {}
+      volunteer_email: this.getCurrentUserEmail(),
+      task_name: event.title || event.task_name || '',
+
+      // 👇 FORMATO MYSQL CORRECTO
+      start_datetime: this.toMySqlDate(start),
+      end_datetime: this.toMySqlDate(end),
+
+      patient_name: event.patientName || event.patient_name || '',
+      comments: event.comments || event.notes || ''
     };
   }
 
-  async createEvent(eventDetails: any): Promise<any> {
-    try {
-      this.checkPermission(); // 🔥 Verificación de seguridad
-      const isAuthorized = await this.ensureAuthToken();
-      if (!isAuthorized) throw new Error('No autorizado.');
-
-      const userEmail = this.authService.getUserEmail() || 'Desconocido';
-      const w = window as any;
-      const start = new Date(eventDetails.start);
-      const end = new Date(eventDetails.end);
-
-      if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) {
-        throw new Error('Rango de fechas inválido');
-      }
-
-      return await w.gapi.client.calendar.events.insert({
-        calendarId: this.CALENDAR_ID,
-        resource: {
-          summary: eventDetails.title,
-          start: { dateTime: start.toISOString() },
-          end: { dateTime: end.toISOString() },
-          extendedProperties: {
-            private: {
-              volunteerEmail: userEmail,
-              category: eventDetails.extendedProps?.category || 'General',
-              patientName: eventDetails.extendedProps?.patientName || '',
-              notes: eventDetails.extendedProps?.notes || ''
-            }
-          }
-        }
-      });
-    } catch (error) {
-      return this.handleApiError(error);
-    }
+  private safeDate(value: any): Date | null {
+    if (!value) return null;
+    const date = new Date(value);
+    if (isNaN(date.getTime())) return null;
+    return date;
   }
 
-  async updateEvent(eventId: string, eventDetails: any): Promise<any> {
-    try {
-      this.checkPermission(); // 🔥 Verificación de seguridad
-      const isAuthorized = await this.ensureAuthToken();
-      if (!isAuthorized) throw new Error('No autorizado.');
+  // =========================
+  // 🔥 MYSQL FORMAT FIX
+  // =========================
+  private toMySqlDate(date: Date): string {
 
-      const w = window as any;
-      const start = new Date(eventDetails.start);
-      const end = new Date(eventDetails.end);
+    const pad = (n: number) => n.toString().padStart(2, '0');
 
-      if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) {
-        throw new Error('Fechas inválidas');
-      }
-
-      return await w.gapi.client.calendar.events.patch({
-        calendarId: this.CALENDAR_ID,
-        eventId,
-        resource: {
-          summary: eventDetails.title,
-          start: { dateTime: start.toISOString() },
-          end: { dateTime: end.toISOString() },
-          extendedProperties: {
-            private: {
-              volunteerEmail: eventDetails.extendedProps?.volunteerEmail || 'Desconocido',
-              category: eventDetails.extendedProps?.category || 'General',
-              patientName: eventDetails.extendedProps?.patientName || '',
-              notes: eventDetails.extendedProps?.notes || ''
-            }
-          }
-        }
-      });
-    } catch (error) {
-      return this.handleApiError(error);
-    }
-  }
-
-  async deleteEvent(eventId: string): Promise<void> {
-    try {
-      this.checkPermission(); // 🔥 Verificación de seguridad
-      const isAuthorized = await this.ensureAuthToken();
-      if (!isAuthorized) throw new Error('No autorizado.');
-
-      const w = window as any;
-      await w.gapi.client.calendar.events.delete({
-        calendarId: this.CALENDAR_ID,
-        eventId
-      });
-    } catch (error) {
-      return this.handleApiError(error);
-    }
+    return (
+      date.getFullYear() + '-' +
+      pad(date.getMonth() + 1) + '-' +
+      pad(date.getDate()) + ' ' +
+      pad(date.getHours()) + ':' +
+      pad(date.getMinutes()) + ':' +
+      pad(date.getSeconds())
+    );
   }
 }
