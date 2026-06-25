@@ -22,6 +22,7 @@ export class CalendarComponent implements OnInit {
 
   calendarOptions: CalendarOptions = {
     locale: 'es',
+    allDayText: 'Todo el día',
     initialView: 'dayGridMonth',
     plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
     selectable: true,
