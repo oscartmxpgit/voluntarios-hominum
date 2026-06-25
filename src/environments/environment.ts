@@ -4,5 +4,10 @@ export const environment = {
   calendarId: '2d565be786f6901412854b365f97591cae801feb588279960fc49fa285097bd7@group.calendar.google.com',
   coordinators: [
     'oscar.trujillo1985@gmail.com'
+  ],
+  volunteers: [
+    'oscartmxp@gmail.com',
+    'voluntario2@gmail.com',
+    'voluntario3@gmail.com'
   ]
 };

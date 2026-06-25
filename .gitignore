@@ -40,3 +40,14 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# --- Ajustes para tu nuevo backend ---
+
+# Ignorar las dependencias de node del backend
+/backend/node_modules
+
+# Ignorar variables de entorno (¡MUY IMPORTANTE!)
+/backend/.env
+
+# Ignorar logs u otros archivos temporales del backend
+/backend/npm-debug.log

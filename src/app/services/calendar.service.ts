@@ -25,7 +25,17 @@ export class CalendarService {
     return false;
   }
 
-  // Manejador centralizado: redirige a '/' para que el AuthGuard gestione la seguridad
+  // 🔥 VALIDACIÓN DE SEGURIDAD: Solo coordinadores o voluntarios en la lista blanca
+  private checkPermission(): void {
+    const email = this.authService.getUserEmail();
+    const isCoordinator = environment.coordinators.includes(email);
+    const isVolunteer = environment.volunteers.includes(email);
+
+    if (!isCoordinator && !isVolunteer) {
+      throw new Error('Acceso denegado: Usuario no autorizado para modificar el calendario.');
+    }
+  }
+
   private handleApiError(error: any): never {
     if (error.status === 401 || error.result?.error?.code === 401) {
       console.warn("Token expirado o inválido. Redirigiendo a home...");
@@ -63,6 +73,7 @@ export class CalendarService {
 
   async createEvent(eventDetails: any): Promise<any> {
     try {
+      this.checkPermission(); // 🔥 Verificación de seguridad
       const isAuthorized = await this.ensureAuthToken();
       if (!isAuthorized) throw new Error('No autorizado.');
 
@@ -98,6 +109,7 @@ export class CalendarService {
 
   async updateEvent(eventId: string, eventDetails: any): Promise<any> {
     try {
+      this.checkPermission(); // 🔥 Verificación de seguridad
       const isAuthorized = await this.ensureAuthToken();
       if (!isAuthorized) throw new Error('No autorizado.');
 
@@ -133,6 +145,7 @@ export class CalendarService {
 
   async deleteEvent(eventId: string): Promise<void> {
     try {
+      this.checkPermission(); // 🔥 Verificación de seguridad
       const isAuthorized = await this.ensureAuthToken();
       if (!isAuthorized) throw new Error('No autorizado.');
 

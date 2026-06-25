@@ -4,11 +4,16 @@ import { CalendarComponent } from './pages/calendar/calendar.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { HomeComponent } from './components/home/home.component';
 import { authGuard } from './services/auth.guard';
+import { adminGuard } from './services/admin.guard'; // Importa el nuevo guard
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
   { path: 'login', component: LoginComponent },
   { path: 'calendar', component: CalendarComponent, canActivate: [authGuard] },
-  { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
+  { 
+    path: 'dashboard', 
+    component: DashboardComponent, 
+    canActivate: [authGuard, adminGuard] // 🔥 Doble protección
+  },
   { path: '**', redirectTo: '' }
 ];

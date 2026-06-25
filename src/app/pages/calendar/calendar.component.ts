@@ -6,6 +6,7 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { CalendarService } from '../../services/calendar.service';
 import { EventFormComponent } from '../../components/event-form/event-form.component';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-calendar',
@@ -16,6 +17,7 @@ import { EventFormComponent } from '../../components/event-form/event-form.compo
 })
 export class CalendarComponent implements OnInit {
   private calendarService = inject(CalendarService);
+  private authService = inject(AuthService);
 
   isFormVisible = false;
   selectedEvent: any = null;
@@ -59,21 +61,24 @@ export class CalendarComponent implements OnInit {
   async loadEvents(): Promise<void> {
     try {
       const googleEvents = await this.calendarService.getAllEvents();
+      const currentUserEmail = this.authService.getUserEmail();
+      const isCoordinator = this.authService.user()?.isCoordinator || false;
 
-      const fullCalendarEvents = googleEvents.map(event => ({
+      const filteredEvents = googleEvents.filter(event => {
+        // Si es coordinador, ve todo
+        if (isCoordinator) return true;
+        
+        // Si no, solo ve los eventos donde su email coincide
+        const eventVolunteerEmail = event.extendedProperties?.private?.volunteerEmail;
+        return eventVolunteerEmail === currentUserEmail;
+      });
+
+      const fullCalendarEvents = filteredEvents.map(event => ({
         id: event.id,
         title: event.summary,
-
-        start:
-          event.start?.dateTime ||
-          event.start?.date,
-
-        end:
-          event.end?.dateTime ||
-          event.end?.date,
-
-        extendedProps:
-          event.extendedProperties?.private || {}
+        start: event.start?.dateTime || event.start?.date,
+        end: event.end?.dateTime || event.end?.date,
+        extendedProps: event.extendedProperties?.private || {}
       }));
 
       this.calendarOptions = {
