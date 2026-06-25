@@ -56,6 +56,8 @@ export class CalendarComponent implements OnInit {
     eventDrop: (info) => this.handleEventChange(info),
     eventResize: (info) => this.handleEventChange(info),
 
+    displayEventTime: false,
+
     eventDataTransform: (event) => ({
       ...event,
       title: String(event.title ?? ''),
@@ -80,18 +82,14 @@ export class CalendarComponent implements OnInit {
       isCoordinator ? true : e.volunteer_email === userEmail
     );
 
-    console.log('EVENTS FINAL:', this.rawEvents.map(e => ({
-      id: e.id,
-      task_name: e.task_name,
-      start: e.start_datetime,
-      end: e.end_datetime
-    })));
+    console.log('EVENTS FINAL:', this.rawEvents);
 
     const mappedEvents = this.rawEvents.map(e => ({
       id: String(e.id),
       title: String(e.task_name ?? ''),
-      start: e.start_datetime,
-      end: e.end_datetime
+      start: new Date(e.start_datetime),
+      end: new Date(e.end_datetime),
+      allDay: false
     }));
 
     this.calendarOptions = {
