@@ -1,13 +1,15 @@
 import { Injectable, inject } from '@angular/core';
-import { CalendarService } from './calendar.service';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class SummaryService {
-
-  private calendarService = inject(CalendarService);
+  private http = inject(HttpClient);
+  private apiUrl = `${environment.apiUrl}/api/time-entries`;
 
   async getTotalStats() {
-    const events = await this.calendarService.getAllEvents();
+    const events = await firstValueFrom(this.http.get<any[]>(this.apiUrl));
 
     return {
       totalVisits: events.length,
@@ -20,55 +22,49 @@ export class SummaryService {
   }
 
   private getDurationHours(event: any): number {
-    const start = new Date(event.start_datetime);
-    const end = new Date(event.end_datetime);
-
-    const diff = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-
+    const diff = (new Date(event.end_datetime).getTime() - new Date(event.start_datetime).getTime()) / 3600000;
     return isNaN(diff) ? 0 : diff;
   }
 
   private calculateHoursByVolunteer(events: any[]) {
-    return events.reduce((acc: any, e) => {
-      const key = e.volunteer_email || 'Desconocido';
-      acc[key] = (acc[key] || 0) + this.getDurationHours(e);
-      return acc;
+    return events.reduce((a, e) => {
+      const k = e.volunteer_email || 'Desconocido';
+      a[k] = (a[k] || 0) + this.getDurationHours(e);
+      return a;
     }, {});
   }
 
   private calculateHoursByCategory(events: any[]) {
-    return events.reduce((acc: any, e) => {
-      const key = 'General';
-      acc[key] = (acc[key] || 0) + this.getDurationHours(e);
-      return acc;
+    return events.reduce((a, e) => {
+      const k = 'General';
+      a[k] = (a[k] || 0) + this.getDurationHours(e);
+      return a;
     }, {});
   }
 
   private calculateVisitsByPatient(events: any[]) {
-    return events.reduce((acc: any, e) => {
-      const key = e.patient_name || 'Sin asignar';
-      acc[key] = (acc[key] || 0) + 1;
-      return acc;
+    return events.reduce((a, e) => {
+      const k = e.patient_name || 'Sin asignar';
+      a[k] = (a[k] || 0) + 1;
+      return a;
     }, {});
   }
 
   private calculateHoursByPatient(events: any[]) {
-    return events.reduce((acc: any, e) => {
-      const key = e.patient_name || 'Sin asignar';
-      acc[key] = (acc[key] || 0) + this.getDurationHours(e);
-      return acc;
+    return events.reduce((a, e) => {
+      const k = e.patient_name || 'Sin asignar';
+      a[k] = (a[k] || 0) + this.getDurationHours(e);
+      return a;
     }, {});
   }
 
   private calculateTotalMonthlyHours(events: any[]) {
     const now = new Date();
-
     return events
       .filter(e => {
         const d = new Date(e.start_datetime);
-        return d.getMonth() === now.getMonth() &&
-               d.getFullYear() === now.getFullYear();
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
       })
-      .reduce((acc, e) => acc + this.getDurationHours(e), 0);
+      .reduce((a, e) => a + this.getDurationHours(e), 0);
   }
 }

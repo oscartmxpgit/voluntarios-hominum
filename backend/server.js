@@ -1,112 +1,211 @@
 require('dotenv').config();
+
 const express = require('express');
-const mysql = require('mysql2/promise'); // Usamos versión promise para mejor async/await
+const mysql = require('mysql2/promise');
 const cors = require('cors');
 const { clerkMiddleware, getAuth } = require('@clerk/express');
 
 const app = express();
 
-app.use(cors({ origin: 'http://localhost:4200', credentials: true }));
-app.use(express.json());
+// =========================
+// CORS
+// =========================
+app.use(cors({
+  origin: 'http://localhost:4200',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
-// Inicialización de Clerk (asegúrate de tener CLERK_SECRET_KEY en tu .env)
+app.use(express.json());
 app.use(clerkMiddleware());
 
+// =========================
+// DB
+// =========================
 const db = mysql.createPool({
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME || 'hominum_db',
-    waitForConnections: true,
-    connectionLimit: 10
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME || 'hominum_db',
+  waitForConnections: true,
+  connectionLimit: 10
 });
 
-// Middleware para verificar si el usuario existe en nuestra BD y si es coordinador
+// =========================
+// AUTH MIDDLEWARE (CLERK ID BASED)
+// =========================
 const requireAuth = async (req, res, next) => {
+  try {
     const { userId } = getAuth(req);
-    if (!userId) return res.status(401).json({ error: 'No autorizado' });
 
-    // Obtenemos info del usuario desde MySQL usando el ID de Clerk
+    if (!userId) {
+      return res.status(401).json({ error: 'No autorizado (sin Clerk userId)' });
+    }
+
+    console.log('LOOKUP USERID:', userId);
+
+
     const [rows] = await db.execute(
-        'SELECT email, is_coordinator FROM users WHERE clerk_user_id = ?', 
-        [userId]
+      'SELECT id, email, is_coordinator FROM users WHERE clerk_user_id = ?',
+      [userId]
     );
 
-    if (rows.length === 0) return res.status(403).json({ error: 'Usuario no registrado en sistema' });
-    
-    req.user = rows[0]; // Guardamos info en req para usarla después
+    console.log('DB RESULT:', rows);
+
+    if (!rows.length) {
+      return res.status(403).json({ error: 'Usuario no registrado en BD' });
+    }
+
+    const user = rows[0];
+
+    req.user = {
+      id: user.id,
+      email: user.email,
+      is_coordinator: Number(user.is_coordinator) === 1
+    };
+
     next();
+
+  } catch (err) {
+    console.error('Auth error:', err);
+    return res.status(500).json({ error: 'Error interno auth' });
+  }
 };
 
-//
 // =========================
-// USERS
+// HELPERS
 // =========================
-app.get('/api/users/me', requireAuth, async (req, res) => {
-    res.json(req.user);
+const isCoordinator = (req) => req.user?.is_coordinator === true;
+
+// =========================
+// ROUTES
+// =========================
+
+// =========================
+// ME (usuario actual)
+// =========================
+app.get('/api/users/me', requireAuth, (req, res) => {
+  res.json(req.user);
 });
 
+// =========================
+// ROLE CHECK
+// =========================
+app.get('/api/users/check-role', requireAuth, (req, res) => {
+  res.json({
+    isCoordinator: isCoordinator(req)
+  });
+});
+
+// =========================
+// USERS (solo coordinador)
+// =========================
 app.get('/api/users', requireAuth, async (req, res) => {
-    if (!req.user.is_coordinator) return res.status(403).json({ error: 'Solo coordinadores' });
-    const [rows] = await db.execute('SELECT id, email, is_coordinator FROM users');
-    res.json(rows);
+  if (!isCoordinator(req)) {
+    return res.status(403).json({ error: 'Solo coordinadores' });
+  }
+
+  const [rows] = await db.execute(
+    'SELECT id, email, is_coordinator FROM users'
+  );
+
+  res.json(rows);
 });
 
-//
 // =========================
-// TIME ENTRIES (ROLE-AWARE)
+// TIME ENTRIES (LIST)
 // =========================
 app.get('/api/time-entries', requireAuth, async (req, res) => {
-    let sql = 'SELECT * FROM time_entries';
-    const params = [];
+  let sql = 'SELECT * FROM time_entries';
+  const params = [];
 
-    if (!req.user.is_coordinator) {
-        sql += ' WHERE volunteer_email = ?';
-        params.push(req.user.email);
-    }
-    sql += ' ORDER BY start_datetime DESC';
+  if (!isCoordinator(req)) {
+    sql += ' WHERE volunteer_email = ?';
+    params.push(req.user.email);
+  }
 
-    const [results] = await db.execute(sql, params);
-    res.json(results);
+  sql += ' ORDER BY start_datetime DESC';
+
+  const [rows] = await db.execute(sql, params);
+  res.json(rows);
 });
 
+// =========================
+// CREATE TIME ENTRY
+// =========================
 app.post('/api/time-entries', requireAuth, async (req, res) => {
-    const { task_name, start_datetime, end_datetime, patient_name, comments } = req.body;
-    const sql = `INSERT INTO time_entries (volunteer_email, task_name, start_datetime, end_datetime, patient_name, comments) VALUES (?, ?, ?, ?, ?, ?)`;
-    
-    const [result] = await db.execute(sql, [req.user.email, task_name, start_datetime, end_datetime, patient_name, comments]);
-    res.status(201).json({ id: result.insertId });
+  const { task_name, start_datetime, end_datetime, patient_name, comments } = req.body;
+
+  const [result] = await db.execute(
+    `INSERT INTO time_entries 
+     (volunteer_email, task_name, start_datetime, end_datetime, patient_name, comments)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [req.user.email, task_name, start_datetime, end_datetime, patient_name, comments]
+  );
+
+  res.status(201).json({ id: result.insertId });
 });
 
+// =========================
+// UPDATE TIME ENTRY
+// =========================
 app.put('/api/time-entries/:id', requireAuth, async (req, res) => {
-    const { task_name, start_datetime, end_datetime, patient_name, comments } = req.body;
-    
-    // Si no es coordinador, verificar que el evento sea suyo antes de actualizar
-    let sql = 'UPDATE time_entries SET task_name=?, start_datetime=?, end_datetime=?, patient_name=?, comments=? WHERE id=?';
-    const params = [task_name, start_datetime, end_datetime, patient_name, comments, req.params.id];
+  const { task_name, start_datetime, end_datetime, patient_name, comments } = req.body;
 
-    if (!req.user.is_coordinator) {
-        sql += ' AND volunteer_email = ?';
-        params.push(req.user.email);
-    }
+  let sql = `
+    UPDATE time_entries 
+    SET task_name=?, start_datetime=?, end_datetime=?, patient_name=?, comments=? 
+    WHERE id=?
+  `;
 
-    const [result] = await db.execute(sql, params);
-    if (result.affectedRows === 0) return res.status(404).json({ error: 'No autorizado o no encontrado' });
-    res.json({ message: 'Actualizado' });
+  const params = [
+    task_name,
+    start_datetime,
+    end_datetime,
+    patient_name,
+    comments,
+    req.params.id
+  ];
+
+  if (!isCoordinator(req)) {
+    sql += ' AND volunteer_email = ?';
+    params.push(req.user.email);
+  }
+
+  const [result] = await db.execute(sql, params);
+
+  if (result.affectedRows === 0) {
+    return res.status(404).json({ error: 'No autorizado o no existe' });
+  }
+
+  res.json({ message: 'OK' });
 });
 
+// =========================
+// DELETE TIME ENTRY
+// =========================
 app.delete('/api/time-entries/:id', requireAuth, async (req, res) => {
-    let sql = 'DELETE FROM time_entries WHERE id = ?';
-    const params = [req.params.id];
+  let sql = 'DELETE FROM time_entries WHERE id=?';
+  const params = [req.params.id];
 
-    if (!req.user.is_coordinator) {
-        sql += ' AND volunteer_email = ?';
-        params.push(req.user.email);
-    }
+  if (!isCoordinator(req)) {
+    sql += ' AND volunteer_email = ?';
+    params.push(req.user.email);
+  }
 
-    const [result] = await db.execute(sql, params);
-    if (result.affectedRows === 0) return res.status(404).json({ error: 'No autorizado o no encontrado' });
-    res.json({ message: 'Eliminado' });
+  const [result] = await db.execute(sql, params);
+
+  if (result.affectedRows === 0) {
+    return res.status(404).json({ error: 'No autorizado o no existe' });
+  }
+
+  res.json({ message: 'OK' });
 });
 
-app.listen(3000, () => console.log('Servidor backend con Clerk corriendo en puerto 3000'));
+// =========================
+// START SERVER
+// =========================
+app.listen(3000, () => {
+  console.log('Backend Clerk running on port 3000');
+});

@@ -1,55 +1,104 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { ClerkService } from '../services/clerk.service';
-import { User } from '../models/user';
+import { firstValueFrom } from 'rxjs';
+
+export interface AppUser {
+  email: string;
+  name: string;
+  picture: string;
+  isCoordinator: boolean;
+}
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-
   private router = inject(Router);
   private clerkService = inject(ClerkService);
+  private http = inject(HttpClient);
 
-  user = signal<User | null>(null);
+  user = signal<AppUser | null>(null);
+  private ready = signal(false);
 
   constructor() {
-    this.syncUserFromClerk();
+    this.init();
   }
 
-  private syncUserFromClerk(): void {
-    const interval = setInterval(() => {
-      const clerkUser = this.clerkService.clerk?.user;
-      const session = this.clerkService.clerk?.session;
-
-      if (session && clerkUser) {
-
-        this.user.set({
-          email: clerkUser.primaryEmailAddress?.emailAddress || '',
-          name: clerkUser.fullName || '',
-          picture: clerkUser.imageUrl || '',
-          isCoordinator: false
-        });
-
-        clearInterval(interval);
-      }
-    }, 200);
+  // =========================
+  // INIT SEGURO (CLERK & DB READY)
+  // =========================
+  private async init(): Promise<void> {
+    await this.waitForClerk();
+    await this.syncUser();
+    this.ready.set(true);
   }
 
-  getUserEmail(): string {
-    return this.user()?.email || '';
+  private async waitForClerk(): Promise<void> {
+    while (!this.clerkService.clerk?.session || !this.clerkService.clerk?.user) {
+      await new Promise(r => setTimeout(r, 100));
+    }
+  }
+
+  private async syncUser(): Promise<void> {
+    const clerkUser = this.clerkService.clerk!.user!;
+    const email = clerkUser.primaryEmailAddress?.emailAddress || '';
+    let isCoordinator = false;
+
+    try {
+      // Fetch the real role from the Express backend
+      const dbUser = await firstValueFrom(
+        this.http.get<{id: number, email: string, is_coordinator: boolean}>('http://localhost:3000/api/users/me')
+      );
+      isCoordinator = dbUser.is_coordinator;
+    } catch (error) {
+      console.error('Error fetching user profile from backend:', error);
+    }
+
+    this.user.set({
+      email,
+      name: clerkUser.fullName || '',
+      picture: clerkUser.imageUrl || '',
+      isCoordinator
+    });
+  }
+
+  // =========================
+  // PUBLIC API
+  // =========================
+  isReady(): boolean {
+    return this.ready();
   }
 
   isLoggedIn(): boolean {
     return !!this.clerkService.clerk?.session;
   }
 
-  async getToken(): Promise<string | null> {
-    return await this.clerkService.getToken();
+  getUserEmail(): string {
+    return this.user()?.email 
+      || this.clerkService.clerk?.user?.primaryEmailAddress?.emailAddress 
+      || '';
   }
 
-  logout(): void {
-    this.clerkService.signOut().then(() => {
-      this.user.set(null);
-      this.router.navigate(['/login']);
-    });
+  getCurrentUser(): AppUser | null {
+    return this.user();
+  }
+
+  // =========================
+  // TOKEN
+  // =========================
+  async getToken(): Promise<string> {
+    const token = await this.clerkService.clerk?.session?.getToken();
+    if (!token) throw new Error('Clerk token no disponible');
+    return token;
+  }
+
+  // =========================
+  // LOGOUT
+  // =========================
+  async logout(): Promise<void> {
+    await this.clerkService.clerk?.signOut();
+    this.user.set(null);
+    this.ready.set(false);
+    this.router.navigate(['/login']);
   }
 }

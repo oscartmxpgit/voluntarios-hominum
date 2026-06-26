@@ -1,17 +1,18 @@
 import { inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from './auth.service';
 
-export const authGuard = () => {
+export const authGuard: CanActivateFn = async () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  
-  // Verificación doble: estado de sesión y presencia de token
+
+  if (!auth.isReady()) {
+    return router.parseUrl('/login');
+  }
+
   if (auth.isLoggedIn()) {
     return true;
   }
-  
-  // Si algo falla, limpiamos y mandamos al login
-  auth.logout();
+
   return router.parseUrl('/login');
 };

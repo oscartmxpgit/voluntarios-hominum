@@ -82,8 +82,6 @@ export class CalendarComponent implements OnInit {
       isCoordinator ? true : e.volunteer_email === userEmail
     );
 
-    console.log('EVENTS FINAL:', this.rawEvents);
-
     const mappedEvents = this.rawEvents.map(e => ({
       id: String(e.id),
       title: String(e.task_name ?? ''),
