@@ -9,5 +9,6 @@ export const environment = {
     'voluntario1@gmail.com',
     'voluntario2@gmail.com',
     'voluntario3@gmail.com'
-  ]
+  ],
+  clerkPublishableKey: 'pk_test_YWN0aXZlLW9jdG9wdXMtOTYuY2xlcmsuYWNjb3VudHMuZGV2JA'
 };

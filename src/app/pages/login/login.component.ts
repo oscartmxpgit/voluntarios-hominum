@@ -1,6 +1,5 @@
-import { Component, AfterViewInit } from '@angular/core';
-import { AuthService } from '../../services/auth.service';
-import { GoogleLoaderService } from '../../services/google-loader.service';
+import { Component, AfterViewInit, ViewChild, ElementRef, inject } from '@angular/core';
+import { ClerkService } from '../../services/clerk.service';
 
 @Component({
   selector: 'app-login',
@@ -10,13 +9,18 @@ import { GoogleLoaderService } from '../../services/google-loader.service';
 })
 export class LoginComponent implements AfterViewInit {
 
-  constructor(
-    private auth: AuthService,
-    private googleLoader: GoogleLoaderService
-  ) {}
+  @ViewChild('signInContainer', { static: true })
+  signInContainer!: ElementRef<HTMLDivElement>;
 
-  async ngAfterViewInit() {
-    await this.googleLoader.load();
-    await this.auth.initializeAuth('google-button');
+  private clerkService = inject(ClerkService);
+
+  async ngAfterViewInit(): Promise<void> {
+    await this.clerkService.init();
+
+    const clerk = this.clerkService.clerk;
+
+    if (!clerk) return;
+
+    clerk.mountSignIn(this.signInContainer.nativeElement);
   }
 }

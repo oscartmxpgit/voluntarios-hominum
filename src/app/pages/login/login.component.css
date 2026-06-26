@@ -1,2 +1,16 @@
 .login-container { display: flex; justify-content: center; padding: 4rem; }
 .card { padding: 2rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; }
+
+#clerk-sign-in {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.card {
+  /* Tus estilos actuales */
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}

@@ -1,14 +1,23 @@
-import { ApplicationConfig, provideAppInitializer } from '@angular/core';
+import { ApplicationConfig, inject, provideAppInitializer } from '@angular/core';
 import { provideRouter } from '@angular/router';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
+
 import { routes } from './app.routes';
-import { initializeGoogleAuth } from './app.initializer';
-import { provideHttpClient } from '@angular/common/http';
+import { ClerkService } from './services/clerk.service';
+import { authInterceptor } from './auth.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
-    // Simplemente pasamos la referencia a la función
-    provideAppInitializer(() => initializeGoogleAuth()),
-    provideHttpClient()
+
+    provideHttpClient(
+      withFetch(),
+      withInterceptors([authInterceptor])
+    ),
+
+    provideAppInitializer(() => {
+      const clerkService = inject(ClerkService);
+      return clerkService.init();
+    })
   ]
 };
