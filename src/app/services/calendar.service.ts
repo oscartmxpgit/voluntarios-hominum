@@ -13,25 +13,51 @@ export class CalendarService {
   private authService = inject(AuthService);
   private readonly API_URL = environment.apiUrl;
 
+  // =========================
+  // GET EVENTS (ROLE-AWARE)
+  // =========================
+
   async getAllEvents(): Promise<any[]> {
+
+    const user = this.authService.user();
+
+    const email = user?.email || '';
+    const isCoordinator = user?.isCoordinator ? 1 : 0;
+
     return await firstValueFrom(
-      this.http.get<any[]>(`${this.API_URL}/time-entries`)
+      this.http.get<any[]>(
+        `${this.API_URL}/time-entries?email=${encodeURIComponent(email)}&isCoordinator=${isCoordinator}`
+      )
     );
   }
 
+  // =========================
+  // CREATE
+  // =========================
+
   async createEvent(event: any): Promise<any> {
     const payload = this.mapToApi(event);
+
     return await firstValueFrom(
       this.http.post(`${this.API_URL}/time-entries`, payload)
     );
   }
 
+  // =========================
+  // UPDATE
+  // =========================
+
   async updateEvent(id: string, event: any): Promise<any> {
     const payload = this.mapToApi(event);
+
     return await firstValueFrom(
       this.http.put(`${this.API_URL}/time-entries/${id}`, payload)
     );
   }
+
+  // =========================
+  // DELETE
+  // =========================
 
   async deleteEvent(id: string): Promise<void> {
     await firstValueFrom(
@@ -39,13 +65,18 @@ export class CalendarService {
     );
   }
 
+  // =========================
+  // USER EMAIL
+  // =========================
+
   getCurrentUserEmail(): string {
     return this.authService.getUserEmail() ?? '';
   }
 
   // =========================
-  // 🔥 FIX PRINCIPAL AQUÍ
+  // MAP EVENT TO API
   // =========================
+
   private mapToApi(event: any) {
 
     const start = this.safeDate(event.start || event.start_datetime);
@@ -59,7 +90,6 @@ export class CalendarService {
       volunteer_email: this.getCurrentUserEmail(),
       task_name: event.title || event.task_name || '',
 
-      // 👇 FORMATO MYSQL CORRECTO
       start_datetime: this.toMySqlDate(start),
       end_datetime: this.toMySqlDate(end),
 
@@ -67,6 +97,10 @@ export class CalendarService {
       comments: event.comments || event.notes || ''
     };
   }
+
+  // =========================
+  // SAFE DATE
+  // =========================
 
   private safeDate(value: any): Date | null {
     if (!value) return null;
@@ -76,8 +110,9 @@ export class CalendarService {
   }
 
   // =========================
-  // 🔥 MYSQL FORMAT FIX
+  // MYSQL FORMAT
   // =========================
+
   private toMySqlDate(date: Date): string {
 
     const pad = (n: number) => n.toString().padStart(2, '0');

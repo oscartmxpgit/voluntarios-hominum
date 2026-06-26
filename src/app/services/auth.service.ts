@@ -1,17 +1,27 @@
 import { Injectable, signal, NgZone, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { User } from '../models/user';
 import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+
   private readonly CLIENT_ID = environment.googleClientId;
+  private readonly API_URL = environment.apiUrl;
+
   private router = inject(Router);
+  private http = inject(HttpClient);
+  private ngZone = inject(NgZone);
+
   private tokenClient: any;
-  
+
   user = signal<User | null>(this.loadUserFromStorage());
 
-  constructor(private ngZone: NgZone) {}
+  // =========================
+  // BASIC USER HELPERS
+  // =========================
 
   getUserEmail(): string {
     return this.user()?.email || '';
@@ -21,23 +31,30 @@ export class AuthService {
     return localStorage.getItem('token');
   }
 
-  // 🔥 Verificación estricta: usuario + token
   isLoggedIn(): boolean {
     return this.user() !== null && this.getToken() !== null;
   }
+
+  // =========================
+  // LOGOUT
+  // =========================
 
   logout(): void {
     const g = window.google as any;
     g?.accounts?.id?.disableAutoSelect?.();
 
-    // Limpieza explícita
     this.user.set(null);
     localStorage.removeItem('user');
     localStorage.removeItem('token');
-    
+
     this.tokenClient = null;
+
     this.router.navigate(['/login']);
   }
+
+  // =========================
+  // GOOGLE INIT
+  // =========================
 
   async initializeAuth(elementId: string): Promise<void> {
     await this.waitForGoogle();
@@ -49,10 +66,15 @@ export class AuthService {
       this.router.navigate(['/calendar']);
       return;
     }
+
     if (this.tokenClient) {
       this.tokenClient.requestAccessToken();
     }
   }
+
+  // =========================
+  // GOOGLE SETUP
+  // =========================
 
   private setupGoogleAuth(elementId: string): void {
     const g = window.google as any;
@@ -63,6 +85,7 @@ export class AuthService {
         client_id: this.CLIENT_ID,
         callback: (res: any) => this.handleCredentialResponse(res),
       });
+
       (window as any).__google_gsi_initialized = true;
     }
 
@@ -75,7 +98,10 @@ export class AuthService {
         callback: (response: any) => {
           if (response.access_token) {
             localStorage.setItem('token', response.access_token);
-            this.ngZone.run(() => this.router.navigate(['/calendar']));
+
+            this.ngZone.run(() => {
+              this.router.navigate(['/calendar']);
+            });
           }
         },
       });
@@ -85,20 +111,39 @@ export class AuthService {
   private renderButton(elementId: string): void {
     const g = window.google as any;
     const buttonElement = document.getElementById(elementId);
+
     if (!buttonElement) {
       setTimeout(() => this.renderButton(elementId), 150);
       return;
     }
-    g.accounts.id.renderButton(buttonElement, { theme: 'outline', size: 'large' });
+
+    g.accounts.id.renderButton(buttonElement, {
+      theme: 'outline',
+      size: 'large'
+    });
   }
 
-  private handleCredentialResponse(response: any): void {
+  // =========================
+  // LOGIN HANDLER (UPDATED)
+  // =========================
+
+  private async handleCredentialResponse(response: any): Promise<void> {
+
     const payload = this.decodeToken(response.credential);
+
+    const dbUser = await this.getUserFromDatabase(payload.email);
+
+    // ❌ User not allowed
+    if (!dbUser) {
+      this.logout();
+      return;
+    }
+
     const userData: User = {
       email: payload.email,
       name: payload.name,
       picture: payload.picture,
-      isCoordinator: environment.coordinators.includes(payload.email),
+      isCoordinator: dbUser.is_coordinator === 1
     };
 
     this.ngZone.run(() => {
@@ -107,6 +152,29 @@ export class AuthService {
       this.requestCalendarAccess();
     });
   }
+
+  // =========================
+  // BACKEND CALL
+  // =========================
+
+  private async getUserFromDatabase(email: string): Promise<any | null> {
+    try {
+      const res = await firstValueFrom(
+        this.http.get<any>(
+          `${this.API_URL}/users/by-email?email=${encodeURIComponent(email)}`
+        )
+      );
+
+      return res?.user ?? null;
+
+    } catch {
+      return null;
+    }
+  }
+
+  // =========================
+  // GOOGLE UTILITIES
+  // =========================
 
   private waitForGoogle(): Promise<void> {
     return new Promise((resolve) => {

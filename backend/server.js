@@ -30,22 +30,96 @@ db.connect(err => {
 });
 
 //
-// GET
+// =========================
+// USERS (READ ONLY)
+// =========================
 //
-app.get('/api/time-entries', (req, res) => {
+
+// Get all allowed users
+app.get('/api/users', (req, res) => {
 
     const sql = `
-        SELECT *
-        FROM time_entries
-        ORDER BY start_datetime DESC
+        SELECT id, email, is_coordinator, created_at
+        FROM users
+        ORDER BY email ASC
     `;
 
     db.query(sql, (err, results) => {
 
         if (err) {
-            return res.status(500).json({
-                error: err.message
-            });
+            return res.status(500).json({ error: err.message });
+        }
+
+        res.json(results);
+    });
+});
+
+// Get user by email
+app.get('/api/users/by-email', (req, res) => {
+
+    const { email } = req.query;
+
+    if (!email) {
+        return res.status(400).json({ error: 'Email is required' });
+    }
+
+    const sql = `
+        SELECT id, email, is_coordinator
+        FROM users
+        WHERE email = ?
+        LIMIT 1
+    `;
+
+    db.query(sql, [email], (err, results) => {
+
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ exists: false });
+        }
+
+        res.json({
+            exists: true,
+            user: results[0]
+        });
+    });
+});
+
+//
+// =========================
+// TIME ENTRIES (ROLE-AWARE)
+// =========================
+//
+
+// GET (volunteers see only their own, coordinators see all)
+app.get('/api/time-entries', (req, res) => {
+
+    const { email, isCoordinator } = req.query;
+
+    if (!email) {
+        return res.status(400).json({ error: 'Email is required' });
+    }
+
+    let sql = `
+        SELECT *
+        FROM time_entries
+    `;
+
+    const params = [];
+
+    if (isCoordinator === '1') {
+        sql += ` ORDER BY start_datetime DESC`;
+    } else {
+        sql += ` WHERE volunteer_email = ? ORDER BY start_datetime DESC`;
+        params.push(email);
+    }
+
+    db.query(sql, params, (err, results) => {
+
+        if (err) {
+            return res.status(500).json({ error: err.message });
         }
 
         res.json(results);
@@ -53,7 +127,7 @@ app.get('/api/time-entries', (req, res) => {
 });
 
 //
-// POST
+// CREATE
 //
 app.post('/api/time-entries', (req, res) => {
 
@@ -76,10 +150,7 @@ app.post('/api/time-entries', (req, res) => {
             patient_name,
             comments
         )
-        VALUES
-        (
-            ?, ?, ?, ?, ?, ?
-        )
+        VALUES (?, ?, ?, ?, ?, ?)
     `;
 
     db.execute(
@@ -95,9 +166,7 @@ app.post('/api/time-entries', (req, res) => {
         (err, result) => {
 
             if (err) {
-                return res.status(500).json({
-                    error: err.message
-                });
+                return res.status(500).json({ error: err.message });
             }
 
             res.status(201).json({
@@ -108,7 +177,7 @@ app.post('/api/time-entries', (req, res) => {
 });
 
 //
-// PUT
+// UPDATE
 //
 app.put('/api/time-entries/:id', (req, res) => {
 
@@ -141,17 +210,13 @@ app.put('/api/time-entries/:id', (req, res) => {
             comments,
             req.params.id
         ],
-        err => {
+        (err) => {
 
             if (err) {
-                return res.status(500).json({
-                    error: err.message
-                });
+                return res.status(500).json({ error: err.message });
             }
 
-            res.json({
-                message: 'Actualizado'
-            });
+            res.json({ message: 'Actualizado' });
         }
     );
 });
@@ -164,22 +229,20 @@ app.delete('/api/time-entries/:id', (req, res) => {
     db.execute(
         'DELETE FROM time_entries WHERE id = ?',
         [req.params.id],
-        err => {
+        (err) => {
 
             if (err) {
-                return res.status(500).json({
-                    error: err.message
-                });
+                return res.status(500).json({ error: err.message });
             }
 
-            res.json({
-                message: 'Eliminado'
-            });
+            res.json({ message: 'Eliminado' });
         }
     );
 });
 
-app.listen(
-    3000,
-    () => console.log('Servidor backend corriendo en puerto 3000')
-);
+//
+// START SERVER
+//
+app.listen(3000, () => {
+    console.log('Servidor backend corriendo en puerto 3000');
+});
