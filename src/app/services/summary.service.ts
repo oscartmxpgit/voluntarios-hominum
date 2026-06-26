@@ -6,7 +6,8 @@ import { environment } from '../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class SummaryService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/api/time-entries`;
+  
+  private apiUrl = `${environment.apiUrl}/time-entries`;
 
   async getTotalStats() {
     const events = await firstValueFrom(this.http.get<any[]>(this.apiUrl));
@@ -27,7 +28,7 @@ export class SummaryService {
   }
 
   private calculateHoursByVolunteer(events: any[]) {
-    return events.reduce((a, e) => {
+    return events.reduce((a: any, e: any) => {
       const k = e.volunteer_email || 'Desconocido';
       a[k] = (a[k] || 0) + this.getDurationHours(e);
       return a;
@@ -35,7 +36,7 @@ export class SummaryService {
   }
 
   private calculateHoursByCategory(events: any[]) {
-    return events.reduce((a, e) => {
+    return events.reduce((a: any, e: any) => {
       const k = 'General';
       a[k] = (a[k] || 0) + this.getDurationHours(e);
       return a;
@@ -43,7 +44,7 @@ export class SummaryService {
   }
 
   private calculateVisitsByPatient(events: any[]) {
-    return events.reduce((a, e) => {
+    return events.reduce((a: any, e: any) => {
       const k = e.patient_name || 'Sin asignar';
       a[k] = (a[k] || 0) + 1;
       return a;
@@ -51,7 +52,7 @@ export class SummaryService {
   }
 
   private calculateHoursByPatient(events: any[]) {
-    return events.reduce((a, e) => {
+    return events.reduce((a: any, e: any) => {
       const k = e.patient_name || 'Sin asignar';
       a[k] = (a[k] || 0) + this.getDurationHours(e);
       return a;
