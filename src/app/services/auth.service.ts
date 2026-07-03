@@ -3,12 +3,16 @@ import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { ClerkService } from '../services/clerk.service';
 import { firstValueFrom } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface AppUser {
   email: string;
   name: string;
   picture: string;
   isCoordinator: boolean;
+  firstName?: string | null;
+  lastName?: string | null;
+  imageUrl?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -45,20 +49,26 @@ export class AuthService {
     let isCoordinator = false;
 
     try {
-      // Fetch the real role from the Express backend
       const dbUser = await firstValueFrom(
-        this.http.get<{id: number, email: string, is_coordinator: boolean}>('http://localhost:3000/api/users/me')
+        this.http.get<{id: number, email: string, is_coordinator: boolean}>(
+            `${environment.apiUrl}/users/me`
+        )
       );
       isCoordinator = dbUser.is_coordinator;
     } catch (error) {
       console.error('Error fetching user profile from backend:', error);
     }
 
+    // Mapeamos los datos de Clerk al objeto AppUser
     this.user.set({
       email,
       name: clerkUser.fullName || '',
       picture: clerkUser.imageUrl || '',
-      isCoordinator
+      isCoordinator,
+      // Aquí agregamos los campos faltantes
+      firstName: clerkUser.firstName,
+      lastName: clerkUser.lastName,
+      imageUrl: clerkUser.imageUrl
     });
   }
 
@@ -74,8 +84,8 @@ export class AuthService {
   }
 
   getUserEmail(): string {
-    return this.user()?.email 
-      || this.clerkService.clerk?.user?.primaryEmailAddress?.emailAddress 
+    return this.user()?.email
+      || this.clerkService.clerk?.user?.primaryEmailAddress?.emailAddress
       || '';
   }
 

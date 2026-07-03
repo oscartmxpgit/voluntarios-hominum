@@ -15,18 +15,21 @@ export class LoginComponent implements AfterViewInit {
   private clerkService = inject(ClerkService);
 
   async ngAfterViewInit(): Promise<void> {
-    // 1. Ensure service is initialized
     await this.clerkService.init();
 
-    // 2. Check that the element exists
     const container = this.signInContainer?.nativeElement;
     const clerk = this.clerkService.clerk;
 
     if (clerk && container) {
-      // 3. Mount
-      clerk.mountSignIn(container);
+      clerk.mountSignIn(container, {
+        appearance: {
+          variables: {
+            colorPrimary: '#4338ca', // Modern indigo branding
+          }
+        }
+      });
     } else {
-      console.error('Clerk or SignInContainer not found', { clerk, container });
+      console.error('Clerk or SignInContainer not found');
     }
   }
 }

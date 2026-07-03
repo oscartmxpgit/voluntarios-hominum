@@ -1,16 +1,39 @@
-.login-container { display: flex; justify-content: center; padding: 4rem; }
-.card { padding: 2rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; }
-
-#clerk-sign-in {
+.login-page {
   display: flex;
   justify-content: center;
-  padding: 1rem;
+  align-items: center;
+  min-height: 60vh;
+  padding: 20px;
+  background-color: #f9fafb; /* Soft light gray */
 }
 
-.card {
-  /* Tus estilos actuales */
+.login-wrapper {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.header {
+  text-align: center;
+}
+
+.header h1 {
+  font-size: 1.875rem;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.header p {
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+.sign-in-container {
   background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  padding: 10px;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  min-height: 400px; /* Keeps layout stable while Clerk loads */
 }

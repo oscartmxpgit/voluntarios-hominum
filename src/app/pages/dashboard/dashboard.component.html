@@ -1,71 +1,71 @@
-<div class="dashboard-page">
-  <h2>Panel de Control - Coordinación</h2>
+<main class="dashboard-page">
+  <header class="dashboard-header">
+    <h1>Dashboard</h1>
+    <p>Resumen general de actividades y estadísticas.</p>
+  </header>
 
   @if (loading) {
-    <div class="loading">Cargando estadísticas...</div>
+    <div class="skeleton-loader">Cargando datos...</div>
   } @else if (stats) {
-    <div class="stats-grid">
-      <section class="card">
+    <section class="stats-overview">
+      <div class="kpi-card">
         <h3>Total Visitas</h3>
         <p class="big-number">{{ stats.totalVisits }}</p>
-      </section>
-
-      <section class="card">
+      </div>
+      <div class="kpi-card">
         <h3>Horas este mes</h3>
         <p class="big-number">{{ stats.totalMonthlyHours | formatDuration }}</p>
-      </section>
+      </div>
+    </section>
 
-      <section class="card">
+    <section class="stats-grid">
+      <div class="list-card">
         <h3>Visitas por Paciente</h3>
-        <ul>
+        <ul class="data-list">
           @for (item of stats.visitsByPatient | keyvalue; track item.key) {
-          <li>
-            {{ item.key }}
-            <span class="val-badge">
-              {{ item.value }}
-            </span>
-          </li>
+            <li class="data-item">
+              <span>{{ item.key }}</span>
+              <span class="badge">{{ item.value }}</span>
+            </li>
           }
         </ul>
-      </section>
+      </div>
 
-      <section class="card">
+      <div class="list-card">
         <h3>Horas por Paciente</h3>
-        <ul>
+        <ul class="data-list">
           @for (item of stats.hoursByPatient | keyvalue; track item.key) {
-          <li>
-            {{ item.key }}
-            <span class="val-badge">
-              {{ item.value | formatDuration }}
-            </span>
-          </li>
+            <li class="data-item">
+              <span>{{ item.key }}</span>
+              <span class="badge">{{ item.value | formatDuration }}</span>
+            </li>
           }
         </ul>
-      </section>
+      </div>
 
-      <section class="card">
+      <div class="list-card">
         <h3>Horas por Voluntario</h3>
-        <ul>
+        <ul class="data-list">
           @for (item of stats.hoursByVolunteer | keyvalue; track item.key) {
-          <li>
-            {{ item.key }} 
-            <span class="val-badge">{{ item.value | formatDuration }}</span>
-          </li>
+            <li class="data-item">
+              <span>{{ item.key }}</span>
+              <span class="badge">{{ item.value | formatDuration }}</span>
+            </li>
           }
         </ul>
-      </section>
+      </div>
 
-      <section class="card">
+      <div class="list-card">
         <h3>Horas por Categoría</h3>
-        <ul>
+        <ul class="data-list">
           @for (item of stats.hoursByCategory | keyvalue; track item.key) {
-          <li>
-            {{ item.key }} 
-            <span class="val-badge">{{ item.value | formatDuration }}</span>
-          </li>
+            <li class="data-item">
+              <span>{{ item.key }}</span>
+              <span class="badge">{{ item.value | formatDuration }}</span>
+            </li>
           }
         </ul>
-      </section>
-    </div>
+      </div>
+    </section>
   }
-</div>
+</main>

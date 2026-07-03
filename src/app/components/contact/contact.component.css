@@ -1,0 +1,22 @@
+.contact { padding: 4rem 2rem; max-width: 600px; margin: 0 auto; }
+.contact-form { display: flex; flex-direction: column; gap: 1.5rem; margin-top: 2rem; }
+
+.form-group { display: flex; flex-direction: column; gap: 0.5rem; }
+.form-group label { font-weight: 600; color: #334155; }
+.form-group input, .form-group textarea { 
+  padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 8px; 
+  font-family: inherit; 
+}
+
+.submit-btn { 
+  padding: 1rem; background: #0f172a; color: white; border: none; 
+  border-radius: 8px; font-weight: 700; cursor: pointer; transition: background 0.3s;
+}
+.submit-btn:disabled { background: #cbd5e1; cursor: not-allowed; }
+.submit-btn:hover:not(:disabled) { background: #1e293b; }
+
+::ng-deep .success-snackbar {
+  background: #10b981 !important; /* Color éxito */
+  color: white !important;
+  font-weight: 600;
+}

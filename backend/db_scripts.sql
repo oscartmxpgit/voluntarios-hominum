@@ -20,6 +20,7 @@ CREATE TABLE time_entries (
     id INT AUTO_INCREMENT PRIMARY KEY,
     volunteer_email VARCHAR(255) NOT NULL,
     task_name VARCHAR(255) NOT NULL,
+
     start_datetime DATETIME NOT NULL,
     end_datetime DATETIME NOT NULL,
     patient_name VARCHAR(255) NULL,
@@ -38,3 +39,21 @@ INSERT INTO users (clerk_user_id, email, is_coordinator) VALUES
 -- Datos de prueba para entradas de tiempo
 INSERT INTO time_entries (volunteer_email, task_name, start_datetime, end_datetime, patient_name) VALUES 
 ('oscartmxp@gmail.com', 'Visita domiciliaria', '2026-06-26 10:00:00', '2026-06-26 12:00:00', 'Juan Perez');
+
+
+-- ==========================================
+-- 3. Tabla de Solicitudes de Contacto
+-- ==========================================
+DROP TABLE IF EXISTS contact_submissions;
+CREATE TABLE contact_submissions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    phone VARCHAR(20) NULL,
+    message TEXT NOT NULL,
+    
+    -- Campos de gestión para el coordinador
+    status ENUM('pending', 'contacted', 'archived') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    resolved_at TIMESTAMP NULL
+);

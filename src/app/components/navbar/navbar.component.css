@@ -1,53 +1,476 @@
-nav { 
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 1rem 3rem; background: #ffffff; 
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  position: sticky; top: 0; z-index: 1000;
+/* =========================
+   NAVBAR BASE
+========================= */
+
+.navbar {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+
+    height: 72px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 28px;
+
+    background: #ffffff;
+
+    border-bottom: 1px solid #e5e7eb;
+
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
-ul { display: flex; list-style: none; gap: 2rem; align-items: center; }
+/* =========================
+   LEFT AREA
+========================= */
 
-.menu-toggle { display: none; background: none; border: none; font-size: 1.8rem; cursor: pointer; }
+.navbar-left {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
 
-/* ESTILOS RESPONSIVOS */
+/* Hamburger */
+.menu-toggle {
+    display: none;
+
+    border: none;
+    background: none;
+
+    cursor: pointer;
+
+    padding: 6px;
+
+    color: #374151;
+}
+
+/* Logo */
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    text-decoration: none;
+}
+
+.logo-img {
+    width: 32px;
+    height: 32px;
+}
+
+.brand {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+/* =========================
+   DESKTOP NAV
+========================= */
+
+.desktop-nav {
+    display: flex;
+    align-items: center;
+    gap: 26px;
+
+    margin-left: 18px;
+}
+
+.nav-link {
+    text-decoration: none;
+
+    color: #6b7280;
+
+    font-weight: 500;
+
+    font-size: 0.95rem;
+
+    transition: 0.2s ease;
+}
+
+.nav-link:hover {
+    color: #111827;
+}
+
+.nav-link.active {
+    color: #111827;
+    font-weight: 600;
+}
+
+/* =========================
+   RIGHT AREA
+========================= */
+
+.navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+/* =========================
+   USER DROPDOWN
+========================= */
+
+.user-dropdown {
+    position: relative;
+}
+
+.user-button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    border: none;
+    background: transparent;
+
+    cursor: pointer;
+
+    padding: 6px 10px;
+
+    border-radius: 10px;
+
+    transition: 0.2s;
+}
+
+.user-button:hover {
+    background: #f3f4f6;
+}
+
+.user-name {
+    font-size: 0.95rem;
+    color: #374151;
+    font-weight: 500;
+}
+
+.avatar {
+    width: 34px;
+    height: 34px;
+
+    border-radius: 50%;
+
+    object-fit: cover;
+
+    border: 1px solid #e5e7eb;
+}
+
+/* Chevron */
+.chevron {
+    transition: 0.2s ease;
+    color: #6b7280;
+}
+
+.chevron.open {
+    transform: rotate(180deg);
+}
+
+/* =========================
+   DROPDOWN MENU
+========================= */
+
+.dropdown-menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 10px);
+
+    width: 240px;
+
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 12px;
+
+    box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+
+    overflow: hidden;
+
+    animation: dropdownIn 0.15s ease;
+}
+
+@keyframes dropdownIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dropdown-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 14px;
+}
+
+.dropdown-user-info strong {
+    font-size: 0.95rem;
+    color: #111827;
+}
+
+.dropdown-menu hr {
+    border: none;
+    border-top: 1px solid #f3f4f6;
+    margin: 0;
+}
+
+.dropdown-item {
+    width: 100%;
+
+    padding: 12px 14px;
+
+    border: none;
+
+    background: none;
+
+    text-align: left;
+
+    cursor: pointer;
+
+    font-size: 0.95rem;
+
+    color: #374151;
+
+    transition: 0.2s;
+}
+
+.dropdown-item:hover {
+    background: #f3f4f6;
+}
+
+.dropdown-item.logout {
+    color: #dc2626;
+}
+
+.dropdown-item.logout:hover {
+    background: #fee2e2;
+}
+
+/* =========================
+   LOGIN BUTTON
+========================= */
+
+.btn-login {
+    background: #111827;
+    color: #ffffff;
+
+    padding: 8px 14px;
+
+    border-radius: 10px;
+
+    text-decoration: none;
+
+    font-weight: 500;
+
+    transition: 0.2s;
+}
+
+.btn-login:hover {
+    background: #374151;
+}
+
+/* =========================
+   DRAWER BACKDROP
+========================= */
+
+.drawer-backdrop {
+    position: fixed;
+    inset: 0;
+
+    background: rgba(0,0,0,0.45);
+
+    backdrop-filter: blur(2px);
+
+    z-index: 1000;
+}
+
+/* =========================
+   MOBILE DRAWER
+========================= */
+
+.drawer {
+    position: fixed;
+    top: 0;
+    left: -320px;
+
+    width: 300px;
+    height: 100vh;
+
+    background: #ffffff;
+
+    z-index: 1001;
+
+    display: flex;
+    flex-direction: column;
+
+    box-shadow: 4px 0 24px rgba(0,0,0,0.15);
+
+    transition: left 0.25s ease;
+}
+
+.drawer.open {
+    left: 0;
+}
+
+/* Drawer header */
+.drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 18px 20px;
+
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.drawer-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    font-weight: 700;
+    font-size: 1.1rem;
+
+    color: #111827;
+}
+
+.drawer-brand img {
+    width: 28px;
+}
+
+.close-btn {
+    border: none;
+    background: none;
+
+    font-size: 18px;
+
+    cursor: pointer;
+
+    color: #6b7280;
+}
+
+.close-btn:hover {
+    color: #111827;
+}
+
+/* Drawer user */
+.drawer-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 18px 20px;
+
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.avatar-lg {
+    width: 44px;
+    height: 44px;
+
+    border-radius: 50%;
+}
+
+/* Drawer links */
+.drawer-links {
+    display: flex;
+    flex-direction: column;
+
+    padding: 14px;
+
+    gap: 6px;
+}
+
+.drawer-links a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 12px 14px;
+
+    border-radius: 10px;
+
+    text-decoration: none;
+
+    color: #374151;
+
+    font-weight: 500;
+
+    transition: 0.2s;
+}
+
+.drawer-links a:hover {
+    background: #f3f4f6;
+}
+
+.drawer-links a.active {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+/* Drawer footer */
+.drawer-footer {
+    margin-top: auto;
+
+    padding: 18px 20px;
+
+    border-top: 1px solid #f3f4f6;
+}
+
+/* =========================
+   BUTTONS
+========================= */
+
+.btn-logout {
+    width: 100%;
+
+    padding: 10px 14px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    cursor: pointer;
+
+    font-weight: 500;
+
+    background: #f3f4f6;
+
+    color: #dc2626;
+}
+
+.btn-logout:hover {
+    background: #fee2e2;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
 @media (max-width: 768px) {
-  nav { padding: 1rem; }
-  
-  .menu-toggle { display: block; }
 
-  ul {
-    position: absolute; top: 100%; left: 0; width: 100%;
-    flex-direction: column; background: white;
-    display: none; /* Oculto por defecto */
-    padding: 1rem 0; gap: 1rem;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-  }
+    .menu-toggle {
+        display: block;
+    }
 
-  ul.active { display: flex; }
+    .desktop-nav {
+        display: none;
+    }
+
+    .navbar-right {
+        display: none;
+    }
+
+    .brand {
+        font-size: 1.05rem;
+    }
+
+    .navbar {
+        padding: 0 16px;
+    }
 }
-
-/* Mantén tus estilos previos de a, .logo, .logout-btn aquí debajo... */
-a { color: #334155; text-decoration: none; font-weight: 600; cursor: pointer; }
-.logo { display: flex; align-items: center; gap: 12px; }
-.logo-img { width: 32px; height: 32px; object-fit: contain; }
-.logout-btn { background: #f1f5f9; padding: 0.5rem 1rem; border-radius: 6px; color: #ef4444; }
-
-/* Estilo base para todos los enlaces */
-a { 
-  color: #334155; 
-  text-decoration: none; 
-  font-weight: 600; 
-  transition: color 0.3s ease; 
-  cursor: pointer;
-  padding-bottom: 4px; /* Espacio para el borde */
-  border-bottom: 2px solid transparent; /* Inicialmente invisible */
-}
-
-/* Estilo cuando el enlace está activo */
-a.active { 
-  color: #003366; 
-  border-bottom: 2px solid #E6B800; /* Color del subrayado */
-}
-
-/* Aseguramos que el logo no se subraye por error */
-.logo.active { border-bottom: none; }
