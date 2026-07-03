@@ -1,0 +1,31 @@
+<section class="admin-container">
+  <h2>Solicitudes de Contacto Pendientes</h2>
+
+  <div *ngIf="loading" class="loading">Cargando datos...</div>
+
+  <table *ngIf="!loading">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Email</th>
+        <th>Mensaje</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let sub of submissions">
+        <td>{{ sub.name }}</td>
+        <td>{{ sub.email }}</td>
+        <td>{{ sub.message }}</td>
+        <td><span class="badge" [class]="sub.status">{{ sub.status }}</span></td>
+        <td>
+          <button (click)="updateStatus(sub.id, 'contacted')" *ngIf="sub.status === 'pending'">
+            Marcar Contactado
+          </button>
+          <button (click)="updateStatus(sub.id, 'archived')">Archivar</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</section>

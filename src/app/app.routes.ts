@@ -5,6 +5,7 @@ import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { HomeComponent } from './components/home/home.component';
 import { authGuard } from './services/auth.guard';
 import { adminGuard } from './services/admin.guard'; // Importa el nuevo guard
+import { ContactListComponent } from './components/contact-list/contact-list.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -13,6 +14,11 @@ export const routes: Routes = [
   { 
     path: 'dashboard', 
     component: DashboardComponent, 
+    canActivate: [authGuard, adminGuard] // 🔥 Doble protección
+  },
+  { 
+    path: 'contact-list', 
+    component: ContactListComponent, 
     canActivate: [authGuard, adminGuard] // 🔥 Doble protección
   },
   { path: '**', redirectTo: '' }

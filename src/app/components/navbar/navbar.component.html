@@ -17,6 +17,7 @@
       <ng-container *ngIf="authService.isLoggedIn()">
         <a routerLink="/calendar" routerLinkActive="active" class="nav-link">Calendario</a>
         <a *ngIf="authService.user()?.isCoordinator" routerLink="/dashboard" routerLinkActive="active" class="nav-link">Dashboard</a>
+        <a *ngIf="authService.user()?.isCoordinator" routerLink="/contact-list" routerLinkActive="active" class="nav-link">Contactos</a>
       </ng-container>
     </div>
   </div>
