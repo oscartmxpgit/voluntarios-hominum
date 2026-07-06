@@ -6,11 +6,13 @@ import { HomeComponent } from './components/home/home.component';
 import { authGuard } from './services/auth.guard';
 import { adminGuard } from './services/admin.guard'; // Importa el nuevo guard
 import { ContactListComponent } from './components/contact-list/contact-list.component';
+import { MyDashboardComponent } from './pages/my-dashboard/my-dashboard.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
   { path: 'login', component: LoginComponent },
   { path: 'calendar', component: CalendarComponent, canActivate: [authGuard] },
+  { path: 'my-dashboard', component: MyDashboardComponent, canActivate: [authGuard] },
   { 
     path: 'dashboard', 
     component: DashboardComponent, 

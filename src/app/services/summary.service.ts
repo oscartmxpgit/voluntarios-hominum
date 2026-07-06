@@ -6,20 +6,43 @@ import { environment } from '../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class SummaryService {
   private http = inject(HttpClient);
-  
+
   private apiUrl = `${environment.apiUrl}/time-entries`;
 
   async getTotalStats() {
-    const events = await firstValueFrom(this.http.get<any[]>(this.apiUrl));
+    const events = await firstValueFrom(
+      this.http.get<any[]>(this.apiUrl)
+    );
 
+    return this.buildStats(events);
+  }
+
+  async getMyStats() {
+    const events = await firstValueFrom(
+      this.http.get<any[]>(`${this.apiUrl}/mine`)
+    );
+
+    return this.buildStats(events);
+  }
+
+  private buildStats(events: any[]) {
     return {
       totalVisits: events.length,
       totalMonthlyHours: this.calculateTotalMonthlyHours(events),
+      hoursByTask: this.calculateHoursByTask(events), // <--- Nuevo
       hoursByCategory: this.calculateHoursByCategory(events),
       hoursByVolunteer: this.calculateHoursByVolunteer(events),
       visitsByPatient: this.calculateVisitsByPatient(events),
       hoursByPatient: this.calculateHoursByPatient(events)
     };
+  }
+
+  private calculateHoursByTask(events: any[]) {
+    return events.reduce((acc: any, e: any) => {
+      const key = e.task_name || 'Sin tarea';
+      acc[key] = (acc[key] || 0) + this.getDurationHours(e);
+      return acc;
+    }, {});
   }
 
   private getDurationHours(event: any): number {

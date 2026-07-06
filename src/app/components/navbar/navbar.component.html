@@ -14,49 +14,58 @@
     </a>
 
     <div class="desktop-nav">
-      <ng-container *ngIf="authService.isLoggedIn()">
+      @if (authService.isLoggedIn()) {
         <a routerLink="/calendar" routerLinkActive="active" class="nav-link">Calendario</a>
-        <a *ngIf="authService.user()?.isCoordinator" routerLink="/dashboard" routerLinkActive="active" class="nav-link">Dashboard</a>
-        <a *ngIf="authService.user()?.isCoordinator" routerLink="/contact-list" routerLinkActive="active" class="nav-link">Contactos</a>
-      </ng-container>
+        <a routerLink="/my-dashboard" routerLinkActive="active" class="nav-link">Mi Panel</a>
+        @if (authService.user()?.isCoordinator) {
+          <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">Resumen General</a>
+          <a routerLink="/contact-list" routerLinkActive="active" class="nav-link">Contactos</a>
+        }
+      }
     </div>
   </div>
 
   <div class="navbar-right">
-    <ng-container *ngIf="authService.isLoggedIn(); else loginTpl">
+    @if (authService.isLoggedIn()) {
       <div class="user-dropdown">
         <button class="user-button" (click)="toggleUserMenu()">
-          <img *ngIf="authService.user()?.imageUrl" [src]="authService.user()?.imageUrl" class="avatar" alt="Avatar">
+          @if (authService.user()?.imageUrl) {
+            <img [src]="authService.user()?.imageUrl" class="avatar" alt="Avatar">
+          }
           <span class="user-name">{{ authService.user()?.firstName }}</span>
           <svg class="chevron" [class.open]="isUserMenuOpen" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
         </button>
 
-        <div class="dropdown-menu" *ngIf="isUserMenuOpen">
-          <div class="dropdown-header">
-            <img *ngIf="authService.user()?.imageUrl" [src]="authService.user()?.imageUrl" class="avatar" alt="Avatar">
-            <div class="dropdown-user-info">
-              <strong>{{ authService.user()?.firstName }} {{ authService.user()?.lastName }}</strong>
+        @if (isUserMenuOpen) {
+          <div class="dropdown-menu">
+            <div class="dropdown-header">
+              @if (authService.user()?.imageUrl) {
+                <img [src]="authService.user()?.imageUrl" class="avatar" alt="Avatar">
+              }
+              <div class="dropdown-user-info">
+                <strong>{{ authService.user()?.firstName }} {{ authService.user()?.lastName }}</strong>
+              </div>
             </div>
+            <hr>
+            <button class="dropdown-item logout" (click)="authService.logout(); closeAllMenus()">
+              🚪 Salir
+            </button>
           </div>
-          <hr>
-          <button class="dropdown-item logout" (click)="authService.logout(); closeAllMenus()">
-            🚪 Salir
-          </button>
-        </div>
+        }
       </div>
-    </ng-container>
-
-    <ng-template #loginTpl>
+    } @else {
       <a routerLink="/login" class="btn-login" (click)="closeAllMenus()">
         Acceder
       </a>
-    </ng-template>
+    }
   </div>
 </nav>
 
-<div class="drawer-backdrop" *ngIf="isMenuOpen" (click)="toggleMenu()"></div>
+@if (isMenuOpen) {
+  <div class="drawer-backdrop" (click)="toggleMenu()"></div>
+}
 
 <aside class="drawer" [class.open]="isMenuOpen">
   <div class="drawer-header">
@@ -67,24 +76,32 @@
     <button class="close-btn" (click)="toggleMenu()">✕</button>
   </div>
 
-  <ng-container *ngIf="authService.isLoggedIn()">
+  @if (authService.isLoggedIn()) {
     <div class="drawer-user">
-      <img *ngIf="authService.user()?.imageUrl" [src]="authService.user()?.imageUrl" class="avatar-lg" alt="Avatar">
+      @if (authService.user()?.imageUrl) {
+        <img [src]="authService.user()?.imageUrl" class="avatar-lg" alt="Avatar">
+      }
       <div>
         <strong>{{ authService.user()?.firstName }} {{ authService.user()?.lastName }}</strong>
       </div>
     </div>
-  </ng-container>
+  }
 
   <nav class="drawer-links">
-    <ng-container *ngIf="authService.isLoggedIn()">
+    @if (authService.isLoggedIn()) {
       <a routerLink="/calendar" routerLinkActive="active" (click)="toggleMenu()">📅 Calendario</a>
-      <a *ngIf="authService.user()?.isCoordinator" routerLink="/dashboard" routerLinkActive="active" (click)="toggleMenu()">📊 Dashboard</a>
-    </ng-container>
+      <a routerLink="/my-dashboard" routerLinkActive="active" (click)="toggleMenu()">👤 Mi Panel</a>
+      @if (authService.user()?.isCoordinator) {
+        <a routerLink="/dashboard" routerLinkActive="active" (click)="toggleMenu()">📊 Resumen General</a>
+      }
+    }
   </nav>
 
   <div class="drawer-footer">
-    <button *ngIf="authService.isLoggedIn()" class="btn-logout full-width" (click)="authService.logout(); toggleMenu()">Salir</button>
-    <a *ngIf="!authService.isLoggedIn()" routerLink="/login" class="btn-login full-width" (click)="toggleMenu()">Acceder</a>
+    @if (authService.isLoggedIn()) {
+      <button class="btn-logout full-width" (click)="authService.logout(); toggleMenu()">Salir</button>
+    } @else {
+      <a routerLink="/login" class="btn-login full-width" (click)="toggleMenu()">Acceder</a>
+    }
   </div>
 </aside>

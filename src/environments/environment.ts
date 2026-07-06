@@ -10,5 +10,8 @@ export const environment = {
     'voluntario2@gmail.com',
     'voluntario3@gmail.com'
   ],
-  clerkPublishableKey: 'pk_test_YWN0aXZlLW9jdG9wdXMtOTYuY2xlcmsuYWNjb3VudHMuZGV2JA'
+  clerkPublishableKey: 'pk_test_YWN0aXZlLW9jdG9wdXMtOTYuY2xlcmsuYWNjb3VudHMuZGV2JA',
+  recaptcha: {
+    siteKey: 'TU_SITE_KEY_DE_DESARROLLO'
+  }
 };

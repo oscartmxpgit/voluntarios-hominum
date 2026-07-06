@@ -1,9 +1,9 @@
 <section id="contact-section" class="contact">
-  <h2>Contacto</h2>
+  <h2>Contacto Hominum</h2>
   <p>Rellena el formulario y nos pondremos en contacto contigo.</p>
 
   <form [formGroup]="contactForm" (ngSubmit)="onSubmit()" class="contact-form">
-    
+
     <div class="form-group">
       <label for="name">Nombre completo *</label>
       <input type="text" id="name" formControlName="name" placeholder="Tu nombre">
@@ -21,8 +21,9 @@
     </div>
 
     <div class="form-group">
-      <label for="phone">Teléfono (opcional)</label>
-      <input type="tel" id="phone" formControlName="phone" placeholder="600 000 000">
+      <label for="phone">Teléfono de contacto (opcional)</label>
+      <input type="tel" id="phone" formControlName="phone" placeholder="Ej: 600 123 456" maxlength="12"
+             pattern="[6789][0-9]{8}" title="Introduce un número de teléfono móvil o fijo válido de 9 dígitos">
     </div>
 
     <div class="form-group">
@@ -30,6 +31,14 @@
       <textarea id="message" formControlName="message" rows="5" placeholder="¿Cómo te gustaría colaborar?"></textarea>
       <small class="error" *ngIf="contactForm.get('message')?.invalid && contactForm.get('message')?.touched">
         El mensaje debe tener al menos 10 caracteres.
+      </small>
+    </div>
+
+    <!-- Integración reCAPTCHA restaurada -->
+    <div class="form-group">
+      <re-captcha formControlName="recaptcha" [siteKey]="siteKey"></re-captcha>
+      <small class="error" *ngIf="contactForm.get('recaptcha')?.invalid && contactForm.get('recaptcha')?.touched">
+        Debes validar que no eres un robot.
       </small>
     </div>
 

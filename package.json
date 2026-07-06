@@ -21,10 +21,12 @@
     "@angular/router": "^19.2.0",
     "@clerk/clerk-js": "^6.22.0",
     "@fullcalendar/angular": "^6.1.21",
+    "@fullcalendar/core": "^6.1.21",
     "@fullcalendar/daygrid": "^6.1.21",
     "@fullcalendar/interaction": "^6.1.21",
     "@fullcalendar/timegrid": "^6.1.21",
     "gapi-script": "^1.2.0",
+    "ng-recaptcha": "^13.2.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"

@@ -2,17 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SummaryService } from '../../services/summary.service';
 import { FormatDurationPipe } from '../../pipes/duration.pipe';
-
-interface DashboardStats {
-  totalVisits: number;
-  totalMonthlyHours: number;
-
-  hoursByCategory: Record<string, number>;
-  hoursByVolunteer: Record<string, number>;
-
-  visitsByPatient: Record<string, number>;
-  hoursByPatient: Record<string, number>;
-}
+import { DashboardStats } from '../../models/dashboardStats';
 
 @Component({
   selector: 'app-dashboard',

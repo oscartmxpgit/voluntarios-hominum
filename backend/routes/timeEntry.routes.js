@@ -12,6 +12,18 @@ router.get('/', requireAuth, async (req, res) => {
   res.json(rows);
 });
 
+router.get('/mine', requireAuth, async (req, res) => {
+  const [rows] = await db.execute(
+    `SELECT *
+     FROM time_entries
+     WHERE volunteer_email = ?
+     ORDER BY start_datetime DESC`,
+    [req.user.email]
+  );
+
+  res.json(rows);
+});
+
 router.post('/', requireAuth, async (req, res) => {
   const { task_name, start_datetime, end_datetime, patient_name, comments } = req.body;
   const [result] = await db.execute(
