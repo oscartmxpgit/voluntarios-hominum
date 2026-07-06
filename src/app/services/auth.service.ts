@@ -29,7 +29,7 @@ export class AuthService {
   }
 
   // =========================
-  // INIT SEGURO (CLERK & DB READY)
+  // INIT SEGURO
   // =========================
   private async init(): Promise<void> {
     await this.waitForClerk();
@@ -59,13 +59,11 @@ export class AuthService {
       console.error('Error fetching user profile from backend:', error);
     }
 
-    // Mapeamos los datos de Clerk al objeto AppUser
     this.user.set({
       email,
       name: clerkUser.fullName || '',
       picture: clerkUser.imageUrl || '',
       isCoordinator,
-      // Aquí agregamos los campos faltantes
       firstName: clerkUser.firstName,
       lastName: clerkUser.lastName,
       imageUrl: clerkUser.imageUrl
@@ -75,6 +73,12 @@ export class AuthService {
   // =========================
   // PUBLIC API
   // =========================
+  
+  // Nuevo método para verificar si es admin
+  isAdmin(): boolean {
+    return this.user()?.isCoordinator === true;
+  }
+
   isReady(): boolean {
     return this.ready();
   }

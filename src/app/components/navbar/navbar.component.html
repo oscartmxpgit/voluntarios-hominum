@@ -16,9 +16,9 @@
     <div class="desktop-nav">
       @if (authService.isLoggedIn()) {
         <a routerLink="/calendar" routerLinkActive="active" class="nav-link">Calendario</a>
-        <a routerLink="/my-dashboard" routerLinkActive="active" class="nav-link">Mi Panel</a>
+        <!-- Ahora apuntamos al Dashboard unificado para todos -->
+        <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">Panel</a>
         @if (authService.user()?.isCoordinator) {
-          <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">Resumen General</a>
           <a routerLink="/contact-list" routerLinkActive="active" class="nav-link">Contactos</a>
         }
       }
@@ -90,9 +90,9 @@
   <nav class="drawer-links">
     @if (authService.isLoggedIn()) {
       <a routerLink="/calendar" routerLinkActive="active" (click)="toggleMenu()">📅 Calendario</a>
-      <a routerLink="/my-dashboard" routerLinkActive="active" (click)="toggleMenu()">👤 Mi Panel</a>
+      <a routerLink="/dashboard" routerLinkActive="active" (click)="toggleMenu()">📊 Panel</a>
       @if (authService.user()?.isCoordinator) {
-        <a routerLink="/dashboard" routerLinkActive="active" (click)="toggleMenu()">📊 Resumen General</a>
+        <a routerLink="/contact-list" routerLinkActive="active" (click)="toggleMenu()">👥 Contactos</a>
       }
     }
   </nav>

@@ -6,21 +6,30 @@ import { HomeComponent } from './components/home/home.component';
 import { authGuard } from './services/auth.guard';
 import { adminGuard } from './services/admin.guard'; // Importa el nuevo guard
 import { ContactListComponent } from './components/contact-list/contact-list.component';
-import { MyDashboardComponent } from './pages/my-dashboard/my-dashboard.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
   { path: 'login', component: LoginComponent },
   { path: 'calendar', component: CalendarComponent, canActivate: [authGuard] },
-  { path: 'my-dashboard', component: MyDashboardComponent, canActivate: [authGuard] },
-  { 
-    path: 'dashboard', 
-    component: DashboardComponent, 
-    canActivate: [authGuard, adminGuard] // 🔥 Doble protección
+  {
+    path: 'my-dashboard',
+    component: DashboardComponent,
+    canActivate: [authGuard],
+    data: {
+      mode: 'mine'
+    }
   },
-  { 
-    path: 'contact-list', 
-    component: ContactListComponent, 
+  {
+    path: 'dashboard',
+    component: DashboardComponent,
+    canActivate: [authGuard, adminGuard],
+    data: {
+      mode: 'all'
+    }
+  },
+  {
+    path: 'contact-list',
+    component: ContactListComponent,
     canActivate: [authGuard, adminGuard] // 🔥 Doble protección
   },
   { path: '**', redirectTo: '' }

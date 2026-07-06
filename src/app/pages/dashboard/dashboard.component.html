@@ -1,4 +1,28 @@
 <main class="dashboard-page">
+  
+  <!-- View Toggle Header -->
+  <header class="dashboard-header mb-4 flex justify-between items-center">
+    <h1>{{ viewMode === 'personal' ? 'Mis Estadísticas' : 'Estadísticas Generales' }}</h1>
+    <div class="view-toggle button-group">
+      <button 
+        [class.active]="viewMode === 'personal'" 
+        (click)="setViewMode('personal')"
+        class="btn btn-outline">
+        Mis horas
+      </button>
+      
+      <!-- Botón deshabilitado si no es coordinador -->
+      <button 
+        [class.active]="viewMode === 'global'" 
+        (click)="setViewMode('global')"
+        [disabled]="!isAdmin"
+        [class.disabled-btn]="!isAdmin"
+        class="btn btn-outline">
+        Global
+      </button>
+    </div>
+  </header>
+
   @if (loading) {
     <div class="skeleton-loader">Cargando métricas...</div>
   } @else if (data) {
