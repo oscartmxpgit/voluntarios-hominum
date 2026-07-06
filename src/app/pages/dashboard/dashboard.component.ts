@@ -1,8 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { SummaryService } from '../../services/summary.service';
+import { SummaryService, DashboardData, MonthlyStat } from '../../services/summary.service';
 import { FormatDurationPipe } from '../../pipes/duration.pipe';
-import { DashboardStats } from '../../models/dashboardStats';
 
 @Component({
   selector: 'app-dashboard',
@@ -14,7 +13,7 @@ import { DashboardStats } from '../../models/dashboardStats';
 export class DashboardComponent implements OnInit {
   private summaryService = inject(SummaryService);
 
-  stats: DashboardStats | null = null;
+  data: DashboardData | null = null;
   loading = true;
 
   async ngOnInit(): Promise<void> {
@@ -23,11 +22,16 @@ export class DashboardComponent implements OnInit {
 
   private async loadDashboardData(): Promise<void> {
     try {
-      this.stats = await this.summaryService.getTotalStats();
+      // Usar getMyStats() si es el panel personal de "Mis horas"
+      this.data = await this.summaryService.getTotalStats();
     } catch (error) {
       console.error('Error al cargar estadísticas:', error);
     } finally {
       this.loading = false;
     }
+  }
+
+  toggleMonth(month: MonthlyStat): void {
+    month.expanded = !month.expanded;
   }
 }

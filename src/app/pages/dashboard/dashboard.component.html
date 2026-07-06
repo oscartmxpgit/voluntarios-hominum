@@ -1,71 +1,160 @@
 <main class="dashboard-page">
-  <header class="dashboard-header">
-    <h1>Resumen General</h1>
-    <p>Actividades y estadísticas.</p>
-  </header>
-
   @if (loading) {
-    <div class="skeleton-loader">Cargando datos...</div>
-  } @else if (stats) {
-    <section class="stats-overview">
-      <div class="kpi-card">
-        <h3>Total Visitas</h3>
-        <p class="big-number">{{ stats.totalVisits }}</p>
+    <div class="skeleton-loader">Cargando métricas...</div>
+  } @else if (data) {
+    
+    <!-- KPIs Generales -->
+    <section class="kpi-banner">
+      <div class="kpi-box">
+        <span class="kpi-title">TOTAL HORAS HISTÓRICAS</span>
+        <span class="kpi-value">{{ data.kpis.totalHistoricalHours | formatDuration }}</span>
       </div>
-      <div class="kpi-card">
-        <h3>Horas este mes</h3>
-        <p class="big-number">{{ stats.totalMonthlyHours | formatDuration }}</p>
+      <div class="kpi-divider"></div>
+      <div class="kpi-box highlight">
+        <span class="kpi-title">HORAS ESTE MES</span>
+        <span class="kpi-value">{{ data.kpis.hoursThisMonth | formatDuration }}</span>
       </div>
-    </section>
-
-    <section class="stats-grid">
-      <div class="list-card">
-        <h3>Visitas por Paciente</h3>
-        <ul class="data-list">
-          @for (item of stats.visitsByPatient | keyvalue; track item.key) {
-            <li class="data-item">
-              <span>{{ item.key }}</span>
-              <span class="badge">{{ item.value }}</span>
-            </li>
-          }
-        </ul>
+      <div class="kpi-divider"></div>
+      <div class="kpi-box">
+        <span class="kpi-title">VISITAS ESTE MES</span>
+        <span class="kpi-value">{{ data.kpis.visitsThisMonth }}</span>
       </div>
-
-      <div class="list-card">
-        <h3>Horas por Paciente</h3>
-        <ul class="data-list">
-          @for (item of stats.hoursByPatient | keyvalue; track item.key) {
-            <li class="data-item">
-              <span>{{ item.key }}</span>
-              <span class="badge">{{ item.value | formatDuration }}</span>
-            </li>
-          }
-        </ul>
+      <div class="kpi-divider"></div>
+      <div class="kpi-box">
+        <span class="kpi-title">PACIENTES ESTE MES</span>
+        <span class="kpi-value">{{ data.kpis.patientsThisMonth }}</span>
       </div>
-
-      <div class="list-card">
-        <h3>Horas por Voluntario</h3>
-        <ul class="data-list">
-          @for (item of stats.hoursByVolunteer | keyvalue; track item.key) {
-            <li class="data-item">
-              <span>{{ item.key }}</span>
-              <span class="badge">{{ item.value | formatDuration }}</span>
-            </li>
-          }
-        </ul>
-      </div>
-
-      <div class="list-card">
-        <h3>Horas por Categoría</h3>
-        <ul class="data-list">
-          @for (item of stats.hoursByCategory | keyvalue; track item.key) {
-            <li class="data-item">
-              <span>{{ item.key }}</span>
-              <span class="badge">{{ item.value | formatDuration }}</span>
-            </li>
-          }
-        </ul>
+      <div class="kpi-divider"></div>
+      <div class="kpi-box">
+        <span class="kpi-title">PACIENTES HISTÓRICOS</span>
+        <span class="kpi-value">{{ data.kpis.historicalPatients }}</span>
       </div>
     </section>
+
+    <div class="dashboard-grid">
+      <!-- Columna Izquierda: Mes Actual -->
+      <section class="current-month-section">
+        <h2>📅 Mes Actual ({{ data.currentMonth?.monthName }})</h2>
+        
+        <div class="card">
+          <h3>Horas por Paciente</h3>
+          <div class="bar-chart-container">
+            @for (patient of data.currentMonth?.patients; track patient.name) {
+              <div class="bar-item">
+                <div class="bar-header">
+                  <span>{{ patient.name }} ({{ patient.visits }} visitas)</span>
+                  <span class="bar-value">{{ patient.hours | formatDuration }} ({{ patient.percentage }}%)</span>
+                </div>
+                <div class="bar-track">
+                  <div class="bar-fill" [style.width.%]="patient.percentage"></div>
+                </div>
+              </div>
+            }
+            @if (data.currentMonth?.patients?.length === 0) {
+              <p class="empty-state">No hay pacientes registrados este mes.</p>
+            }
+          </div>
+        </div>
+
+        <div class="card mt-4">
+          <h3>Horas por Tarea</h3>
+          <div class="bar-chart-container">
+            @for (task of data.currentMonth?.tasks; track task.name) {
+              <div class="bar-item">
+                <div class="bar-header">
+                  <span>{{ task.name }}</span>
+                  <span class="bar-value">{{ task.hours | formatDuration }}</span>
+                </div>
+                <div class="bar-track">
+                  <div class="bar-fill task-fill" [style.width.%]="task.percentage"></div>
+                </div>
+              </div>
+            }
+            @if (data.currentMonth?.tasks?.length === 0) {
+              <p class="empty-state">No hay tareas registradas este mes.</p>
+            }
+          </div>
+        </div>
+      </section>
+
+      <!-- Columna Derecha: Histórico -->
+      <section class="history-section">
+        <h2>📊 Evolución e Histórico</h2>
+
+        <!-- Gráfico de Evolución -->
+        <div class="card evolution-card">
+          <h3>Evolución de horas</h3>
+          <div class="bar-chart-container">
+            <!-- Mes Actual en la evolución -->
+            @if (data.currentMonth) {
+              <div class="bar-item">
+                <div class="bar-header">
+                  <span>{{ data.currentMonth.monthName }}</span>
+                  <span class="bar-value">{{ data.currentMonth.totalHours | formatDuration }}</span>
+                </div>
+                <div class="bar-track">
+                  <div class="bar-fill highlight-fill" [style.width.%]="data.currentMonth.percentageOfMax"></div>
+                </div>
+              </div>
+            }
+
+            <!-- Meses Anteriores -->
+            @for (month of data.history; track month.monthKey) {
+              <div class="bar-item">
+                <div class="bar-header">
+                  <span>{{ month.monthName }}</span>
+                  <span class="bar-value">{{ month.totalHours | formatDuration }}</span>
+                </div>
+                <div class="bar-track">
+                  <div class="bar-fill" [style.width.%]="month.percentageOfMax"></div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Acordeón de Detalles Históricos -->
+        <div class="accordion-container mt-4">
+          @for (month of data.history; track month.monthKey) {
+            <div class="accordion-item" [class.expanded]="month.expanded">
+              
+              <div class="accordion-header" (click)="toggleMonth(month)">
+                <div class="accordion-title">
+                  <span class="month-name">{{ month.monthName }}</span>
+                  <span class="month-summary">{{ month.totalHours | formatDuration }} | {{ month.totalVisits }} visitas</span>
+                </div>
+                <span class="icon">{{ month.expanded ? '▼' : '▶' }}</span>
+              </div>
+              
+              @if (month.expanded) {
+                <div class="accordion-body">
+                  <table class="history-table">
+                    <thead>
+                      <tr>
+                        <th>Paciente</th>
+                        <th class="text-right">Horas</th>
+                        <th class="text-right">Visitas</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (patient of month.patients; track patient.name) {
+                        <tr>
+                          <td>{{ patient.name }}</td>
+                          <td class="text-right">{{ patient.hours | formatDuration }}</td>
+                          <td class="text-right">{{ patient.visits }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </div>
+          }
+          @if (data.history.length === 0) {
+             <p class="empty-state mt-4">No hay datos históricos disponibles.</p>
+          }
+        </div>
+      </section>
+    </div>
   }
 </main>
