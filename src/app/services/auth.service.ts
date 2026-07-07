@@ -1,6 +1,6 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { ClerkService } from '../services/clerk.service';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -28,9 +28,6 @@ export class AuthService {
     this.init();
   }
 
-  // =========================
-  // INIT SEGURO
-  // =========================
   private async init(): Promise<void> {
     await this.waitForClerk();
     await this.syncUser();
@@ -44,37 +41,32 @@ export class AuthService {
   }
 
   private async syncUser(): Promise<void> {
-    const clerkUser = this.clerkService.clerk!.user!;
-    const email = clerkUser.primaryEmailAddress?.emailAddress || '';
-    let isCoordinator = false;
-
     try {
+      const token = await this.getToken();
+      const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+      
       const dbUser = await firstValueFrom(
         this.http.get<{id: number, email: string, is_coordinator: boolean}>(
-            `${environment.apiUrl}/users/me`
+          `${environment.apiUrl}/users/me`, { headers }
         )
       );
-      isCoordinator = dbUser.is_coordinator;
-    } catch (error) {
-      console.error('Error fetching user profile from backend:', error);
-    }
 
-    this.user.set({
-      email,
-      name: clerkUser.fullName || '',
-      picture: clerkUser.imageUrl || '',
-      isCoordinator,
-      firstName: clerkUser.firstName,
-      lastName: clerkUser.lastName,
-      imageUrl: clerkUser.imageUrl
-    });
+      const clerkUser = this.clerkService.clerk!.user!;
+      this.user.set({
+        email: dbUser.email,
+        name: clerkUser.fullName || '',
+        picture: clerkUser.imageUrl || '',
+        isCoordinator: !!dbUser.is_coordinator,
+        firstName: clerkUser.firstName,
+        lastName: clerkUser.lastName,
+        imageUrl: clerkUser.imageUrl
+      });
+    } catch (error) {
+      console.error('Acceso denegado o usuario no registrado en BD:', error);
+      this.user.set(null); // Seguridad: Si falla el sync, no hay usuario válido
+    }
   }
 
-  // =========================
-  // PUBLIC API
-  // =========================
-  
-  // Nuevo método para verificar si es admin
   isAdmin(): boolean {
     return this.user()?.isCoordinator === true;
   }
@@ -97,18 +89,12 @@ export class AuthService {
     return this.user();
   }
 
-  // =========================
-  // TOKEN
-  // =========================
   async getToken(): Promise<string> {
     const token = await this.clerkService.clerk?.session?.getToken();
-    if (!token) throw new Error('Clerk token no disponible');
+    if (!token) throw new Error('Token no disponible');
     return token;
   }
 
-  // =========================
-  // LOGOUT
-  // =========================
   async logout(): Promise<void> {
     await this.clerkService.clerk?.signOut();
     this.user.set(null);

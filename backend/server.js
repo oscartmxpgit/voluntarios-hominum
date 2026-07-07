@@ -12,5 +12,6 @@ app.use(clerkMiddleware());
 app.use('/api/users', require('./routes/user.routes'));
 app.use('/api/time-entries', require('./routes/timeEntry.routes'));
 app.use('/api/contact-submissions', require('./routes/contact.routes'));
+app.use('/api/patients', require('./routes/patient.routes'));
 
 app.listen(3000, () => console.log('Servidor en puerto 3000'));

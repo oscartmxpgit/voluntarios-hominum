@@ -57,3 +57,21 @@ CREATE TABLE contact_submissions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     resolved_at TIMESTAMP NULL
 );
+
+-- ==========================================
+-- 4. Tabla de Pacientes
+-- ==========================================
+DROP TABLE IF EXISTS patients;
+CREATE TABLE patients (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    assigned_volunteer_id INT NULL, -- Enlazado al ID del voluntario de la tabla users
+    status ENUM('active', 'inactive') DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (assigned_volunteer_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- Datos de semilla opcionales para pruebas
+INSERT INTO patients (name, assigned_volunteer_id) VALUES 
+('María Carmen Gómez', 2), -- Suponiendo que el ID 2 es 'oscartmxp@gmail.com'
+('Manuel Rodríguez', NULL);

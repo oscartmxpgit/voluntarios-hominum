@@ -14,12 +14,12 @@
     </a>
 
     <div class="desktop-nav">
-      @if (authService.isLoggedIn()) {
+      @if (authService.isLoggedIn() && authService.user()) {
         <a routerLink="/calendar" routerLinkActive="active" class="nav-link">Calendario</a>
-        <!-- Ahora apuntamos al Dashboard unificado para todos -->
         <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">Panel</a>
-        @if (authService.user()?.isCoordinator) {
+        @if (authService.isAdmin()) {
           <a routerLink="/contact-list" routerLinkActive="active" class="nav-link">Contactos</a>
+          <a routerLink="/patients" routerLinkActive="active" class="nav-link">Pacientes</a>
         }
       }
     </div>
@@ -27,34 +27,36 @@
 
   <div class="navbar-right">
     @if (authService.isLoggedIn()) {
-      <div class="user-dropdown">
-        <button class="user-button" (click)="toggleUserMenu()">
-          @if (authService.user()?.imageUrl) {
-            <img [src]="authService.user()?.imageUrl" class="avatar" alt="Avatar">
-          }
-          <span class="user-name">{{ authService.user()?.firstName }}</span>
-          <svg class="chevron" [class.open]="isUserMenuOpen" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
-        </button>
+      @if (authService.user()) {
+        <div class="user-dropdown">
+          <button class="user-button" (click)="toggleUserMenu()">
+            @if (authService.user()?.imageUrl) {
+              <img [src]="authService.user()?.imageUrl" class="avatar" alt="Avatar">
+            }
+            <span class="user-name">{{ authService.user()?.firstName }}</span>
+            <svg class="chevron" [class.open]="isUserMenuOpen" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
 
-        @if (isUserMenuOpen) {
-          <div class="dropdown-menu">
-            <div class="dropdown-header">
-              @if (authService.user()?.imageUrl) {
-                <img [src]="authService.user()?.imageUrl" class="avatar" alt="Avatar">
-              }
-              <div class="dropdown-user-info">
-                <strong>{{ authService.user()?.firstName }} {{ authService.user()?.lastName }}</strong>
+          @if (isUserMenuOpen) {
+            <div class="dropdown-menu">
+              <div class="dropdown-header">
+                @if (authService.user()?.imageUrl) {
+                  <img [src]="authService.user()?.imageUrl" class="avatar" alt="Avatar">
+                }
+                <div class="dropdown-user-info">
+                  <strong>{{ authService.user()?.firstName }} {{ authService.user()?.lastName }}</strong>
+                </div>
               </div>
+              <hr>
+              <button class="dropdown-item logout" (click)="authService.logout(); closeAllMenus()">
+                🚪 Salir
+              </button>
             </div>
-            <hr>
-            <button class="dropdown-item logout" (click)="authService.logout(); closeAllMenus()">
-              🚪 Salir
-            </button>
-          </div>
-        }
-      </div>
+          }
+        </div>
+      }
     } @else {
       <a routerLink="/login" class="btn-login" (click)="closeAllMenus()">
         Acceder
@@ -76,7 +78,7 @@
     <button class="close-btn" (click)="toggleMenu()">✕</button>
   </div>
 
-  @if (authService.isLoggedIn()) {
+  @if (authService.isLoggedIn() && authService.user()) {
     <div class="drawer-user">
       @if (authService.user()?.imageUrl) {
         <img [src]="authService.user()?.imageUrl" class="avatar-lg" alt="Avatar">
@@ -88,18 +90,21 @@
   }
 
   <nav class="drawer-links">
-    @if (authService.isLoggedIn()) {
+    @if (authService.isLoggedIn() && authService.user()) {
       <a routerLink="/calendar" routerLinkActive="active" (click)="toggleMenu()">📅 Calendario</a>
       <a routerLink="/dashboard" routerLinkActive="active" (click)="toggleMenu()">📊 Panel</a>
-      @if (authService.user()?.isCoordinator) {
+      @if (authService.isAdmin()) {
         <a routerLink="/contact-list" routerLinkActive="active" (click)="toggleMenu()">👥 Contactos</a>
+        <a routerLink="/patients" routerLinkActive="active" (click)="toggleMenu()">🤕 Pacientes</a>
       }
     }
   </nav>
 
   <div class="drawer-footer">
     @if (authService.isLoggedIn()) {
-      <button class="btn-logout full-width" (click)="authService.logout(); toggleMenu()">Salir</button>
+      @if (authService.user()) {
+        <button class="btn-logout full-width" (click)="authService.logout(); toggleMenu()">Salir</button>
+      }
     } @else {
       <a routerLink="/login" class="btn-login full-width" (click)="toggleMenu()">Acceder</a>
     }

@@ -1,26 +1,27 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { UserService } from './user.service';
+import { AuthService } from './auth.service';
 
 export const adminGuard: CanActivateFn = async () => {
-  const userService = inject(UserService);
+  const auth = inject(AuthService);
   const router = inject(Router);
 
-  try {
-    const user = await userService.getCurrentUserProfile();
+  // 1. Aseguramos que la sincronización haya terminado
+  while (!auth.isReady()) {
+    await new Promise(r => setTimeout(r, 50));
+  }
 
-    if (!user) {
-      return router.parseUrl('/login');
-    }
+  // 2. Si no hay usuario cargado en la señal, significa que 
+  // o no está logueado en Clerk o no existe en nuestra BD (syncUser falló)
+  if (!auth.user()) {
+    return router.parseUrl('/login');
+  }
 
-    if (user.is_coordinator !== true) {
-      return router.parseUrl('/');
-    }
-
-    return true;
-
-  } catch (err) {
-    console.error('AdminGuard error:', err);
+  // 3. Verificación de rol
+  if (!auth.isAdmin()) {
+    console.warn('Intento de acceso a ruta de admin sin privilegios');
     return router.parseUrl('/');
   }
+
+  return true;
 };
