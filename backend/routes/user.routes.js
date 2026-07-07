@@ -40,7 +40,6 @@ router.get('/volunteers', requireAuth, async (req, res) => {
     const [rows] = await db.execute(`
       SELECT id, email
       FROM users
-      WHERE is_coordinator = 0
       ORDER BY email
     `);
 

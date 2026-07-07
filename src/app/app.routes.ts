@@ -7,6 +7,7 @@ import { authGuard } from './services/auth.guard';
 import { adminGuard } from './services/admin.guard'; // Importa el nuevo guard
 import { ContactListComponent } from './components/contact-list/contact-list.component';
 import { PatientsComponent } from './pages/patients/patients.component';
+import { VolunteersComponent } from './pages/volunteers/volunteers.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -23,6 +24,11 @@ export const routes: Routes = [
   {
     path: 'contact-list',
     component: ContactListComponent,
+    canActivate: [authGuard, adminGuard]
+  },
+  {
+    path: 'volunteers',
+    component: VolunteersComponent,
     canActivate: [authGuard, adminGuard]
   },
   {

@@ -5,94 +5,87 @@
   </header>
 
   @if (loading) {
-    <div class="loader-state">Cargando base de pacientes...</div>
+  <div class="loader-state">Cargando base de pacientes...</div>
   } @else {
-    
-    @if (showForm) {
-      <section class="form-card">
-        <h3>{{ isEditing ? 'Editar Datos del Paciente' : 'Dar de Alta Nuevo Paciente' }}</h3>
-        <form (ngSubmit)="savePatient()">
-          <div class="form-group">
-            <label for="patientName">Nombre Completo</label>
-            <input 
-              type="text" 
-              id="patientName" 
-              [(ngModel)]="currentPatient.name" 
-              name="name" 
-              required 
-              placeholder="Ej. Juan Pérez">
-          </div>
 
-          <div class="form-group">
-            <label for="volunteerSelect">Voluntario Asignado</label>
-            <select 
-              id="volunteerSelect" 
-              [(ngModel)]="currentPatient.assigned_volunteer_id" 
-              name="assigned_volunteer_id">
-              <option [ngValue]="null">Sin asignar voluntario</option>
-              @for (vol of volunteers; track vol.id) {
-                <option [ngValue]="vol.id">{{ vol.email }}</option>
-              }
-            </select>
-          </div>
+  @if (showForm) {
+  <section class="form-card">
+    <h3>{{ isEditing ? 'Editar Datos del Paciente' : 'Dar de Alta Nuevo Paciente' }}</h3>
+    <form (ngSubmit)="savePatient()">
+      <div class="form-group">
+        <label for="patientName">Nombre Completo</label>
+        <input type="text" id="patientName" [(ngModel)]="currentPatient.name" name="name" required
+          placeholder="Ej. Juan Pérez">
+      </div>
 
-          @if (isEditing) {
-            <div class="form-group">
-              <label for="statusSelect">Estado</label>
-              <select id="statusSelect" [(ngModel)]="currentPatient.status" name="status">
-                <option value="active">Activo</option>
-                <option value="inactive">Inactivo</option>
-              </select>
-            </div>
+      <div class="form-group">
+        <label for="volunteerSelect">Voluntario Asignado</label>
+        <select id="volunteerSelect" [(ngModel)]="currentPatient.assigned_volunteer_id" [compareWith]="compareVolunteer"
+          name="assigned_volunteer_id">
+          <option [ngValue]="null">Sin asignar voluntario</option>
+          @for (vol of volunteers; track vol.id) {
+          <option [ngValue]="vol.id">{{ vol.email }}</option>
           }
+        </select>
+      </div>
 
-          <div class="form-actions">
-            <button type="button" class="btn-secondary" (click)="cancelForm()">Cancelar</button>
-            <button type="submit" class="btn-save" [disabled]="!currentPatient.name">Guardar Registro</button>
-          </div>
-        </form>
-      </section>
-    }
+      @if (isEditing) {
+      <div class="form-group">
+        <label for="statusSelect">Estado</label>
+        <select id="statusSelect" [(ngModel)]="currentPatient.status" name="status">
+          <option value="active">Activo</option>
+          <option value="inactive">Inactivo</option>
+        </select>
+      </div>
+      }
 
-    <section class="table-container">
-      <table class="patients-table">
-        <thead>
-          <tr>
-            <th>Nombre del Paciente</th>
-            <th>Voluntario Enlazado</th>
-            <th>Estado</th>
-            <th class="text-center">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (patient of patients; track patient.id) {
-            <tr>
-              <td class="patient-name">{{ patient.name }}</td>
-              <td>
-                @if (patient.volunteer_email) {
-                  <span class="volunteer-badge">{{ patient.volunteer_email }}</span>
-                } @else {
-                  <span class="unassigned-text">Sin voluntario enlazado</span>
-                }
-              </td>
-              <td>
-                <span class="status-indicator" [class.inactive]="patient.status === 'inactive'">
-                  {{ patient.status === 'inactive' ? 'Inactivo' : 'Activo' }}
-                </span>
-              </td>
-              <td class="text-center actions-cell">
-                <button class="btn-edit" (click)="openEditModal(patient)">✏️ Editar</button>
-                <button class="btn-delete" (click)="patient.id && deletePatient(patient.id)">🗑️ Eliminar</button>
-              </td>
-            </tr>
-          }
-          @if (patients.length === 0) {
-            <tr>
-              <td colspan="4" class="empty-table-state">No se han encontrado pacientes en el sistema.</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </section>
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" (click)="cancelForm()">Cancelar</button>
+        <button type="submit" class="btn-save" [disabled]="!currentPatient.name">Guardar Registro</button>
+      </div>
+    </form>
+  </section>
+  }
+
+  <section class="table-container">
+    <table class="patients-table">
+      <thead>
+        <tr>
+          <th>Nombre del Paciente</th>
+          <th>Voluntario Enlazado</th>
+          <th>Estado</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (patient of patients; track patient.id) {
+        <tr>
+          <td class="patient-name">{{ patient.name }}</td>
+          <td>
+            @if (patient.volunteer_email) {
+            <span class="volunteer-badge">{{ patient.volunteer_email }}</span>
+            } @else {
+            <span class="unassigned-text">Sin voluntario enlazado</span>
+            }
+          </td>
+          <td>
+            <span class="status-indicator" [class.inactive]="patient.status === 'inactive'">
+              {{ patient.status === 'inactive' ? 'Inactivo' : 'Activo' }}
+            </span>
+          </td>
+          <td class="text-center actions-cell">
+            <button class="btn-edit" (click)="openEditModal(patient)">✏️ Editar</button>
+            <button class="btn-delete" (click)="patient.id && deletePatient(patient.id)">🗑️ Eliminar</button>
+          </td>
+        </tr>
+        }
+        @if (patients.length === 0) {
+        <tr>
+          <td colspan="4" class="empty-table-state">No se han encontrado pacientes en el sistema.</td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </section>
   }
 </main>
