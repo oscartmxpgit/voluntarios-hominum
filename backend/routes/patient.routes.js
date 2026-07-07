@@ -3,7 +3,9 @@ const router = express.Router();
 const db = require('../config/db');
 const { requireAuth, isCoordinator } = require('../middleware/auth');
 
-// Obtener todos los pacientes
+// =======================================
+// GET ALL PATIENTS (Admin/Coordinator)
+// =======================================
 router.get('/', requireAuth, async (req, res) => {
   if (!isCoordinator(req)) {
     return res.status(403).json({ error: 'Solo coordinadores' });
@@ -28,7 +30,9 @@ router.get('/', requireAuth, async (req, res) => {
   }
 });
 
-// Crear un paciente
+// =======================================
+// CREATE PATIENT
+// =======================================
 router.post('/', requireAuth, async (req, res) => {
   if (!isCoordinator(req)) {
     return res.status(403).json({ error: 'Solo coordinadores' });
@@ -58,7 +62,9 @@ router.post('/', requireAuth, async (req, res) => {
   }
 });
 
-// Actualizar un paciente
+// =======================================
+// UPDATE PATIENT
+// =======================================
 router.put('/:id', requireAuth, async (req, res) => {
   if (!isCoordinator(req)) {
     return res.status(403).json({ error: 'Solo coordinadores' });
@@ -71,9 +77,9 @@ router.put('/:id', requireAuth, async (req, res) => {
     await db.execute(
       `UPDATE patients
        SET
-         name = ?,
-         assigned_volunteer_id = ?,
-         status = ?
+          name = ?,
+          assigned_volunteer_id = ?,
+          status = ?
        WHERE id = ?`,
       [
         name,
@@ -90,7 +96,9 @@ router.put('/:id', requireAuth, async (req, res) => {
   }
 });
 
-// Eliminar un paciente
+// =======================================
+// DELETE PATIENT
+// =======================================
 router.delete('/:id', requireAuth, async (req, res) => {
   if (!isCoordinator(req)) {
     return res.status(403).json({ error: 'Solo coordinadores' });
@@ -112,13 +120,10 @@ router.delete('/:id', requireAuth, async (req, res) => {
 });
 
 // =======================================
-// PACIENTES DISPONIBLES PARA EL CALENDARIO
+// AVAILABLE PATIENTS (Filtered by User)
 // =======================================
-
 router.get('/available', requireAuth, async (req, res) => {
-
   try {
-
     let sql = `
       SELECT
         id,
@@ -129,31 +134,47 @@ router.get('/available', requireAuth, async (req, res) => {
 
     const params = [];
 
+    // Filter by volunteer if not a coordinator
     if (!isCoordinator(req)) {
-      sql += `
-        AND assigned_volunteer_id = ?
-      `;
+      sql += ` AND assigned_volunteer_id = ? `;
       params.push(req.user.id);
     }
 
-    sql += `
-      ORDER BY name
-    `;
+    sql += ` ORDER BY name `;
 
     const [rows] = await db.execute(sql, params);
-
     res.json(rows);
-
   } catch (err) {
-
     console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
-    res.status(500).json({
-      error: err.message
-    });
+// =======================================
+// GET PATIENTS BY VOLUNTEER (Helper for specific email filtering)
+// =======================================
+router.get('/by-volunteer/:volunteerId', requireAuth, async (req, res) => {
+  const { volunteerId } = req.params;
 
+  // Security check: Only allow if it's the user's own ID or if they are a coordinator
+  if (!isCoordinator(req) && String(req.user.id) !== String(volunteerId)) {
+    return res.status(403).json({ error: 'Acceso denegado' });
   }
 
+  try {
+    const sql = `
+      SELECT id, name 
+      FROM patients 
+      WHERE assigned_volunteer_id = ? AND status = 'active'
+      ORDER BY name ASC
+    `;
+
+    const [rows] = await db.execute(sql, [volunteerId]);
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;

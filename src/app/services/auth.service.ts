@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface AppUser {
+  id: number;
   email: string;
   name: string;
   picture: string;
@@ -44,15 +45,16 @@ export class AuthService {
     try {
       const token = await this.getToken();
       const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
-      
+
       const dbUser = await firstValueFrom(
-        this.http.get<{id: number, email: string, is_coordinator: boolean}>(
+        this.http.get<{ id: number, email: string, is_coordinator: boolean }>(
           `${environment.apiUrl}/volunteers/me`, { headers }
         )
       );
 
       const clerkUser = this.clerkService.clerk!.user!;
       this.user.set({
+        id: dbUser.id, // Add this
         email: dbUser.email,
         name: clerkUser.fullName || '',
         picture: clerkUser.imageUrl || '',
@@ -63,7 +65,7 @@ export class AuthService {
       });
     } catch (error) {
       console.error('Acceso denegado o usuario no registrado en BD:', error);
-      this.user.set(null); // Seguridad: Si falla el sync, no hay usuario válido
+      this.user.set(null);
     }
   }
 

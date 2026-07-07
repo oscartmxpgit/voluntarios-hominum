@@ -3,8 +3,6 @@ export interface CalendarEvent {
 
   volunteer_email: string;
 
-  task_name: string;
-
   start_datetime: string;
 
   end_datetime: string;

@@ -10,19 +10,12 @@ export interface PatientStat {
   percentage?: number;
 }
 
-export interface TaskStat {
-  name: string;
-  hours: number;
-  percentage?: number;
-}
-
 export interface MonthlyStat {
   monthKey: string;
   monthName: string;
   totalHours: number;
   totalVisits: number;
   patients: PatientStat[];
-  tasks: TaskStat[];
   expanded?: boolean;
   percentageOfMax?: number;
 }
@@ -50,10 +43,9 @@ export class SummaryService {
 
   async getTotalStats(): Promise<DashboardData> {
 
-    const events =
-      await firstValueFrom(
-        this.http.get<any[]>(this.apiUrl)
-      );
+    const events = await firstValueFrom(
+      this.http.get<any[]>(this.apiUrl)
+    );
 
     return this.buildStats(events);
 
@@ -61,10 +53,9 @@ export class SummaryService {
 
   async getMyStats(): Promise<DashboardData> {
 
-    const events =
-      await firstValueFrom(
-        this.http.get<any[]>(`${this.apiUrl}/mine`)
-      );
+    const events = await firstValueFrom(
+      this.http.get<any[]>(`${this.apiUrl}/mine`)
+    );
 
     return this.buildStats(events);
 
@@ -82,9 +73,7 @@ export class SummaryService {
         new Date(event.start_datetime).getTime()
       ) / 3600000;
 
-    return isNaN(diff)
-      ? 0
-      : diff;
+    return isNaN(diff) ? 0 : diff;
 
   }
 
@@ -97,24 +86,18 @@ export class SummaryService {
 
     let totalHistoricalHours = 0;
 
-    const historicalPatients =
-      new Set<string>();
+    const historicalPatients = new Set<string>();
 
-    const monthlyMap =
-      new Map<string, MonthlyStat>();
+    const monthlyMap = new Map<string, MonthlyStat>();
 
     const getMonthName = (key: string) => {
 
       const [year, month] = key.split('-');
 
-      const date =
-        new Date(+year, +month - 1);
+      const date = new Date(+year, +month - 1);
 
       const monthName =
-        date.toLocaleString(
-          'es-ES',
-          { month: 'long' }
-        );
+        date.toLocaleString('es-ES', { month: 'long' });
 
       return (
         monthName.charAt(0).toUpperCase() +
@@ -131,20 +114,14 @@ export class SummaryService {
         continue;
       }
 
-      const date =
-        new Date(event.start_datetime);
+      const date = new Date(event.start_datetime);
 
       const monthKey =
         `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
-      const hours =
-        this.getDurationHours(event);
+      const hours = this.getDurationHours(event);
 
-      const patient =
-        event.patient_name ?? 'Sin paciente';
-
-      const task =
-        event.task_name ?? 'Sin tarea';
+      const patient = event.patient_name ?? 'Sin paciente';
 
       totalHistoricalHours += hours;
 
@@ -164,16 +141,13 @@ export class SummaryService {
 
           patients: [],
 
-          tasks: [],
-
           expanded: false
 
         });
 
       }
 
-      const month =
-        monthlyMap.get(monthKey)!;
+      const month = monthlyMap.get(monthKey)!;
 
       month.totalHours += hours;
 
@@ -208,31 +182,6 @@ export class SummaryService {
 
       patientStat.visits++;
 
-      //---------------------------------------
-      // Tareas
-      //---------------------------------------
-
-      let taskStat =
-        month.tasks.find(
-          t => t.name === task
-        );
-
-      if (!taskStat) {
-
-        taskStat = {
-
-          name: task,
-
-          hours: 0
-
-        };
-
-        month.tasks.push(taskStat);
-
-      }
-
-      taskStat.hours += hours;
-
     }
 
     const allMonths =
@@ -264,22 +213,7 @@ export class SummaryService {
 
       });
 
-      month.tasks.forEach(t => {
-
-        t.percentage =
-          Math.round(
-            t.hours /
-            (month.totalHours || 1) *
-            100
-          );
-
-      });
-
       month.patients.sort(
-        (a, b) => b.hours - a.hours
-      );
-
-      month.tasks.sort(
         (a, b) => b.hours - a.hours
       );
 
@@ -295,7 +229,7 @@ export class SummaryService {
         m => m.monthKey === currentMonthKey
       ) ?? null;
 
-    let history =
+    const history =
       allMonths.filter(
         m => m.monthKey !== currentMonthKey
       );
@@ -314,8 +248,6 @@ export class SummaryService {
 
         patients: [],
 
-        tasks: [],
-
         percentageOfMax: 0
 
       };
@@ -328,17 +260,13 @@ export class SummaryService {
 
         totalHistoricalHours,
 
-        hoursThisMonth:
-          currentMonth.totalHours,
+        hoursThisMonth: currentMonth.totalHours,
 
-        visitsThisMonth:
-          currentMonth.totalVisits,
+        visitsThisMonth: currentMonth.totalVisits,
 
-        patientsThisMonth:
-          currentMonth.patients.length,
+        patientsThisMonth: currentMonth.patients.length,
 
-        historicalPatients:
-          historicalPatients.size
+        historicalPatients: historicalPatients.size
 
       },
 

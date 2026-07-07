@@ -38,7 +38,6 @@ CREATE TABLE time_entries (
     id INT AUTO_INCREMENT PRIMARY KEY,
     volunteer_id INT NOT NULL,
     patient_id INT NULL,
-    task_name VARCHAR(255) NOT NULL,
     start_datetime DATETIME NOT NULL,
     end_datetime DATETIME NOT NULL,
     comments TEXT NULL,
@@ -49,32 +48,6 @@ CREATE TABLE time_entries (
         NULL
 );
 
-INSERT INTO
-    time_entries (
-        volunteer_id,
-        patient_id,
-        task_name,
-        start_datetime,
-        end_datetime,
-        comments
-    )
-VALUES
-    (
-        2,
-        1,
-        'Visita domiciliaria',
-        '2026-06-26 10:00:00',
-        '2026-06-26 12:00:00',
-        'Paciente estable.'
-    ),
-    (
-        2,
-        NULL,
-        'Reunión de coordinación',
-        '2026-06-27 09:00:00',
-        '2026-06-27 10:00:00',
-        'Planificación semanal.'
-    );
 
 -- ==========================================
 -- 3. Tabla de Solicitudes de Contacto

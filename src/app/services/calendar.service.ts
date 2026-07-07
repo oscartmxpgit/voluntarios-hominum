@@ -9,20 +9,16 @@ import { environment } from '../../environments/environment';
 export class CalendarService {
 
   private http = inject(HttpClient);
-  private readonly API_URL = environment.apiUrl;
+  private readonly API_URL = `${environment.apiUrl}/time-entries`;
 
   // =========================
   // GET EVENTS
   // =========================
 
   async getAllEvents(): Promise<any[]> {
-
     return await firstValueFrom(
-      this.http.get<any[]>(
-        `${this.API_URL}/time-entries`
-      )
+      this.http.get<any[]>(this.API_URL)
     );
-
   }
 
   // =========================
@@ -30,16 +26,12 @@ export class CalendarService {
   // =========================
 
   async createEvent(event: any): Promise<any> {
-
-    const payload = this.mapToApi(event);
-
     return await firstValueFrom(
       this.http.post(
-        `${this.API_URL}/time-entries`,
-        payload
+        this.API_URL,
+        this.mapToApi(event)
       )
     );
-
   }
 
   // =========================
@@ -47,16 +39,12 @@ export class CalendarService {
   // =========================
 
   async updateEvent(id: string, event: any): Promise<any> {
-
-    const payload = this.mapToApi(event);
-
     return await firstValueFrom(
       this.http.put(
-        `${this.API_URL}/time-entries/${id}`,
-        payload
+        `${this.API_URL}/${id}`,
+        this.mapToApi(event)
       )
     );
-
   }
 
   // =========================
@@ -64,13 +52,29 @@ export class CalendarService {
   // =========================
 
   async deleteEvent(id: string): Promise<void> {
-
     await firstValueFrom(
-      this.http.delete(
-        `${this.API_URL}/time-entries/${id}`
+      this.http.delete<void>(`${this.API_URL}/${id}`)
+    );
+  }
+
+  // =========================
+  // PATIENTS
+  // =========================
+
+  async getAvailablePatients(): Promise<any[]> {
+    return await firstValueFrom(
+      this.http.get<any[]>(
+        `${environment.apiUrl}/patients/available`
       )
     );
+  }
 
+  async getPatientsByVolunteer(volunteerId: number): Promise<any[]> {
+    return await firstValueFrom(
+      this.http.get<any[]>(
+        `${environment.apiUrl}/patients/by-volunteer/${volunteerId}`
+      )
+    );
   }
 
   // =========================
@@ -79,41 +83,19 @@ export class CalendarService {
 
   private mapToApi(event: any) {
 
-    const start = this.safeDate(
-      event.start || event.start_datetime
-    );
-
-    const end = this.safeDate(
-      event.end || event.end_datetime
-    );
+    const start = this.safeDate(event.start ?? event.start_datetime);
+    const end = this.safeDate(event.end ?? event.end_datetime);
 
     if (!start || !end) {
-      throw new Error('Fechas inválidas en evento');
+      throw new Error('Fechas inválidas en el evento');
     }
 
     return {
-
-      task_name:
-        event.title ||
-        event.task_name ||
-        '',
-
-      start_datetime:
-        this.toMySqlDate(start),
-
-      end_datetime:
-        this.toMySqlDate(end),
-
-      patient_id:
-        event.patient_id ?? null,
-
-      comments:
-        event.comments ||
-        event.notes ||
-        ''
-
+      start_datetime: this.toMySqlDate(start),
+      end_datetime: this.toMySqlDate(end),
+      patient_id: event.patient_id ? Number(event.patient_id) : null,
+      comments: event.comments ?? ''
     };
-
   }
 
   // =========================
@@ -126,14 +108,9 @@ export class CalendarService {
       return null;
     }
 
-    const date = new Date(value);
+    const date = value instanceof Date ? value : new Date(value);
 
-    if (isNaN(date.getTime())) {
-      return null;
-    }
-
-    return date;
-
+    return isNaN(date.getTime()) ? null : date;
   }
 
   // =========================
@@ -142,28 +119,9 @@ export class CalendarService {
 
   private toMySqlDate(date: Date): string {
 
-    const pad = (n: number) =>
-      n.toString().padStart(2, '0');
+    const pad = (n: number) => n.toString().padStart(2, '0');
 
-    return (
-      date.getFullYear() + '-' +
-      pad(date.getMonth() + 1) + '-' +
-      pad(date.getDate()) + ' ' +
-      pad(date.getHours()) + ':' +
-      pad(date.getMinutes()) + ':' +
-      pad(date.getSeconds())
-    );
-
-  }
-
-  async getAvailablePatients(): Promise<any[]> {
-
-    return await firstValueFrom(
-      this.http.get<any[]>(
-        `${this.API_URL}/patients/available`
-      )
-    );
-
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
   }
 
 }

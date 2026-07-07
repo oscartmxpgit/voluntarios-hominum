@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FullCalendarModule } from '@fullcalendar/angular';
 import { CalendarOptions } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -24,6 +24,9 @@ export class CalendarComponent implements OnInit {
   isFormVisible = false;
   selectedEvent: any = null;
   private rawEvents: any[] = [];
+  
+  // Propiedad para los eventos, FullCalendar la detectará si cambia
+  calendarEvents: any[] = [];
 
   calendarOptions: CalendarOptions = {
     locale: 'es',
@@ -39,23 +42,12 @@ export class CalendarComponent implements OnInit {
       right: 'dayGridMonth,timeGridWeek'
     },
     navLinks: true,
-    buttonText: {
-      today: 'Hoy',
-      month: 'Mes',
-      week: 'Semana',
-      day: 'Día'
-    },
+    buttonText: { today: 'Hoy', month: 'Mes', week: 'Semana', day: 'Día' },
     dateClick: (info) => this.handleDateClick(info),
     eventClick: (info) => this.handleEventClick(info),
     eventDrop: (info) => this.handleEventChange(info),
     eventResize: (info) => this.handleEventChange(info),
-    displayEventTime: false,
-    eventDataTransform: (event) => ({
-      ...event,
-      title: String(event.title ?? ''),
-      id: String(event.id ?? '')
-    }),
-    events: []
+    displayEventTime: false
   };
 
   async ngOnInit(): Promise<void> {
@@ -64,25 +56,21 @@ export class CalendarComponent implements OnInit {
 
   async loadEvents(): Promise<void> {
     const allEvents = await this.calendarService.getAllEvents();
-    const userEmail = this.authService.getUserEmail();
-    const isCoordinator = this.authService.user()?.isCoordinator;
-
+    const user = this.authService.user();
+    
+    // Filtrado mejorado: asegúrate de que el backend envíe el campo email o volunteer_id
     this.rawEvents = allEvents.filter(e =>
-      isCoordinator ? true : e.volunteer_email === userEmail
+      user?.isCoordinator ? true : (e.volunteer_id === user?.id)
     );
 
-    const mappedEvents = this.rawEvents.map(e => ({
+    // Mapeo directo a formato FullCalendar
+    this.calendarEvents = this.rawEvents.map(e => ({
       id: String(e.id),
-      title: String(e.task_name ?? ''),
-      start: new Date(e.start_datetime),
-      end: new Date(e.end_datetime),
+      title: String(e.patient_name ?? 'Sin nombre'),
+      start: e.start_datetime,
+      end: e.end_datetime,
       allDay: false
     }));
-
-    this.calendarOptions = {
-      ...this.calendarOptions,
-      events: mappedEvents
-    };
   }
 
   handleDateClick(info: any): void {
@@ -91,7 +79,6 @@ export class CalendarComponent implements OnInit {
     end.setHours(end.getHours() + 1);
 
     this.selectedEvent = {
-      task_name: '',
       start_datetime: start,
       end_datetime: end,
       patient_name: '',
@@ -109,20 +96,14 @@ export class CalendarComponent implements OnInit {
   }
 
   async handleEventChange(info: any): Promise<void> {
-    // 1. Buscamos el evento completo en los datos crudos para preservar los campos
     const existingEvent = this.rawEvents.find(e => String(e.id) === String(info.event.id));
-    
-    if (!existingEvent) {
-      info.revert();
-      return;
-    }
+    if (!existingEvent) { info.revert(); return; }
 
     try {
-      // 2. Construimos el objeto completo con la info original + las nuevas fechas
       const updatedEvent = {
         ...existingEvent,
         start_datetime: info.event.start,
-        end_datetime: info.event.end || info.event.start // Por si no hay fecha fin
+        end_datetime: info.event.end || info.event.start
       };
 
       await this.calendarService.updateEvent(info.event.id, updatedEvent);

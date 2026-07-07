@@ -1,13 +1,10 @@
 <div class="calendar-container">
-  <full-calendar [options]="calendarOptions"></full-calendar>
+  <full-calendar [options]="calendarOptions" [events]="calendarEvents"></full-calendar>
 
   @if (isFormVisible) {
-    <div class="modal-overlay">
-      <app-event-form 
-        [eventData]="selectedEvent" 
-        (close)="closeForm()"
-        (delete)="handleDeleteEvent($event)">
-      </app-event-form>
-    </div>
+  <div class="modal-overlay">
+    <app-event-form [eventData]="selectedEvent" (close)="closeForm()" (delete)="handleDeleteEvent($event)">
+    </app-event-form>
+  </div>
   }
 </div>

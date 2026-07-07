@@ -7,11 +7,8 @@ const { requireAuth, isCoordinator } = require('../middleware/auth');
 // =======================================
 // OBTENER EVENTOS
 // =======================================
-
 router.get('/', requireAuth, async (req, res) => {
-
   try {
-
     let sql = `
       SELECT
         t.*,
@@ -38,15 +35,12 @@ router.get('/', requireAuth, async (req, res) => {
     console.error(err);
     res.status(500).json({ error: err.message });
   }
-
 });
 
 // =======================================
 // SOLO MIS EVENTOS
 // =======================================
-
 router.get('/mine', requireAuth, async (req, res) => {
-
   try {
 
     const [rows] = await db.execute(
@@ -66,24 +60,18 @@ router.get('/mine', requireAuth, async (req, res) => {
     res.json(rows);
 
   } catch (err) {
-
     console.error(err);
     res.status(500).json({ error: err.message });
-
   }
-
 });
 
 // =======================================
 // CREAR
 // =======================================
-
 router.post('/', requireAuth, async (req, res) => {
-
   try {
 
     const {
-      task_name,
       start_datetime,
       end_datetime,
       patient_id,
@@ -96,20 +84,18 @@ router.post('/', requireAuth, async (req, res) => {
       (
         volunteer_id,
         patient_id,
-        task_name,
         start_datetime,
         end_datetime,
         comments
       )
-      VALUES (?,?,?,?,?,?)
+      VALUES (?, ?, ?, ?, ?)
       `,
       [
         req.user.id,
-        patient_id || null,
-        task_name,
+        patient_id ?? null,
         start_datetime,
         end_datetime,
-        comments
+        comments ?? null
       ]
     );
 
@@ -118,24 +104,20 @@ router.post('/', requireAuth, async (req, res) => {
     });
 
   } catch (err) {
-
     console.error(err);
-    res.status(500).json({ error: err.message });
-
+    res.status(500).json({
+      error: err.message
+    });
   }
-
 });
 
 // =======================================
 // ACTUALIZAR
 // =======================================
-
 router.put('/:id', requireAuth, async (req, res) => {
-
   try {
 
     const {
-      task_name,
       start_datetime,
       end_datetime,
       patient_id,
@@ -145,25 +127,23 @@ router.put('/:id', requireAuth, async (req, res) => {
     let sql = `
       UPDATE time_entries
       SET
-        task_name=?,
-        start_datetime=?,
-        end_datetime=?,
-        patient_id=?,
-        comments=?
-      WHERE id=?
+        start_datetime = ?,
+        end_datetime = ?,
+        patient_id = ?,
+        comments = ?
+      WHERE id = ?
     `;
 
     const params = [
-      task_name,
       start_datetime,
       end_datetime,
-      patient_id || null,
-      comments,
+      patient_id ?? null,
+      comments ?? null,
       req.params.id
     ];
 
     if (!isCoordinator(req)) {
-      sql += ` AND volunteer_id=?`;
+      sql += ` AND volunteer_id = ?`;
       params.push(req.user.id);
     }
 
@@ -171,7 +151,7 @@ router.put('/:id', requireAuth, async (req, res) => {
 
     if (!result.affectedRows) {
       return res.status(404).json({
-        error: 'No autorizado'
+        error: 'Evento no encontrado o no autorizado'
       });
     }
 
@@ -180,38 +160,36 @@ router.put('/:id', requireAuth, async (req, res) => {
     });
 
   } catch (err) {
-
     console.error(err);
-    res.status(500).json({ error: err.message });
-
+    res.status(500).json({
+      error: err.message
+    });
   }
-
 });
 
 // =======================================
 // ELIMINAR
 // =======================================
-
 router.delete('/:id', requireAuth, async (req, res) => {
-
   try {
 
-    let sql =
-      `DELETE FROM time_entries WHERE id=?`;
+    let sql = `
+      DELETE FROM time_entries
+      WHERE id = ?
+    `;
 
     const params = [req.params.id];
 
     if (!isCoordinator(req)) {
-      sql += ` AND volunteer_id=?`;
+      sql += ` AND volunteer_id = ?`;
       params.push(req.user.id);
     }
 
-    const [result] =
-      await db.execute(sql, params);
+    const [result] = await db.execute(sql, params);
 
     if (!result.affectedRows) {
       return res.status(404).json({
-        error: 'No autorizado'
+        error: 'Evento no encontrado o no autorizado'
       });
     }
 
@@ -220,12 +198,11 @@ router.delete('/:id', requireAuth, async (req, res) => {
     });
 
   } catch (err) {
-
     console.error(err);
-    res.status(500).json({ error: err.message });
-
+    res.status(500).json({
+      error: err.message
+    });
   }
-
 });
 
 module.exports = router;
