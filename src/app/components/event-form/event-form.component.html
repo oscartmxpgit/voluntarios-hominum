@@ -1,64 +1,43 @@
 <div class="modal-container">
   <div class="modal-content">
+    <h3>{{ eventData.id ? 'Editar Evento' : 'Nuevo Evento' }}</h3>
 
-    <h3>
-      {{ eventData.id ? 'Editar Evento' : 'Nuevo Evento' }}
-    </h3>
+    <div class="form-group">
+      <label>Título</label>
+      <input [(ngModel)]="eventData.task_name" placeholder="Ej. Consulta Médica" />
+    </div>
 
-    <label>Título</label>
-    <input
-      [(ngModel)]="eventData.task_name"
-      placeholder="Título"
-    />
+    <div class="form-group">
+      <label>Inicio</label>
+      <input type="datetime-local" [(ngModel)]="eventData.start_datetime" (change)="onStartChange()" />
+    </div>
 
-    <label>Inicio</label>
-    <input
-      type="datetime-local"
-      [(ngModel)]="eventData.start_datetime"
-      (change)="onStartChange()"
-    />
+    <div class="form-group">
+      <label>Fin</label>
+      <input type="datetime-local" [(ngModel)]="eventData.end_datetime" />
+    </div>
 
-    <label>Fin</label>
-    <input
-      type="datetime-local"
-      [(ngModel)]="eventData.end_datetime"
-    />
+    <div class="form-group">
+      <label>Paciente</label>
+      <select [(ngModel)]="eventData.patient_id" name="patient_id">
+        <option [ngValue]="null">Sin paciente</option>
+        @for (patient of patients; track patient.id) {
+          <option [ngValue]="patient.id">{{ patient.name }}</option>
+        }
+      </select>
+    </div>
 
-    <label>Paciente</label>
-    <input
-      [(ngModel)]="eventData.patient_name"
-      placeholder="Nombre paciente"
-    />
-
-    <label>Observaciones</label>
-    <textarea
-      [(ngModel)]="eventData.comments"
-      placeholder="Notas adicionales..."
-    ></textarea>
+    <div class="form-group">
+      <label>Observaciones</label>
+      <textarea [(ngModel)]="eventData.comments" placeholder="Notas adicionales..."></textarea>
+    </div>
 
     <div class="actions">
-
-      <button class="btn-save" (click)="save()">
-        Guardar
-      </button>
-
-      @if (eventData?.id) {
-        <button
-          type="button"
-          class="btn-delete"
-          (click)="onDelete()"
-        >
-          Eliminar
-        </button>
+      <button type="button" class="btn-save" (click)="save()">Guardar</button>
+      @if (eventData.id) {
+        <button type="button" class="btn-delete" (click)="onDelete()">Eliminar</button>
       }
-
-      <button
-        class="btn-cancel"
-        (click)="close.emit()"
-      >
-        Cancelar
-      </button>
-
+      <button type="button" class="btn-cancel" (click)="close.emit()">Cancelar</button>
     </div>
   </div>
 </div>

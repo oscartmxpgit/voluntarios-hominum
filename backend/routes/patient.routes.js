@@ -111,4 +111,49 @@ router.delete('/:id', requireAuth, async (req, res) => {
   }
 });
 
+// =======================================
+// PACIENTES DISPONIBLES PARA EL CALENDARIO
+// =======================================
+
+router.get('/available', requireAuth, async (req, res) => {
+
+  try {
+
+    let sql = `
+      SELECT
+        id,
+        name
+      FROM patients
+      WHERE status = 'active'
+    `;
+
+    const params = [];
+
+    if (!isCoordinator(req)) {
+      sql += `
+        AND assigned_volunteer_id = ?
+      `;
+      params.push(req.user.id);
+    }
+
+    sql += `
+      ORDER BY name
+    `;
+
+    const [rows] = await db.execute(sql, params);
+
+    res.json(rows);
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      error: err.message
+    });
+
+  }
+
+});
+
 module.exports = router;

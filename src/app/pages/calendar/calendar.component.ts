@@ -28,42 +28,33 @@ export class CalendarComponent implements OnInit {
   calendarOptions: CalendarOptions = {
     locale: 'es',
     allDayText: 'Todo el día',
-
     initialView: 'dayGridMonth',
     plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
-
     selectable: true,
     editable: true,
     height: '100%',
-
     headerToolbar: {
       left: 'prev,next today',
       center: 'title',
       right: 'dayGridMonth,timeGridWeek'
     },
-
     navLinks: true,
-
     buttonText: {
       today: 'Hoy',
       month: 'Mes',
       week: 'Semana',
       day: 'Día'
     },
-
     dateClick: (info) => this.handleDateClick(info),
     eventClick: (info) => this.handleEventClick(info),
     eventDrop: (info) => this.handleEventChange(info),
     eventResize: (info) => this.handleEventChange(info),
-
     displayEventTime: false,
-
     eventDataTransform: (event) => ({
       ...event,
       title: String(event.title ?? ''),
       id: String(event.id ?? '')
     }),
-
     events: []
   };
 
@@ -72,9 +63,7 @@ export class CalendarComponent implements OnInit {
   }
 
   async loadEvents(): Promise<void> {
-
     const allEvents = await this.calendarService.getAllEvents();
-
     const userEmail = this.authService.getUserEmail();
     const isCoordinator = this.authService.user()?.isCoordinator;
 
@@ -97,7 +86,6 @@ export class CalendarComponent implements OnInit {
   }
 
   handleDateClick(info: any): void {
-
     const start = new Date(info.date);
     const end = new Date(start);
     end.setHours(end.getHours() + 1);
@@ -109,13 +97,11 @@ export class CalendarComponent implements OnInit {
       patient_name: '',
       comments: ''
     };
-
     this.isFormVisible = true;
   }
 
   handleEventClick(info: any): void {
-
-    const event = this.rawEvents.find(e => e.id == info.event.id);
+    const event = this.rawEvents.find(e => String(e.id) === String(info.event.id));
     if (!event) return;
 
     this.selectedEvent = { ...event };
@@ -123,19 +109,24 @@ export class CalendarComponent implements OnInit {
   }
 
   async handleEventChange(info: any): Promise<void> {
+    // 1. Buscamos el evento completo en los datos crudos para preservar los campos
+    const existingEvent = this.rawEvents.find(e => String(e.id) === String(info.event.id));
+    
+    if (!existingEvent) {
+      info.revert();
+      return;
+    }
 
     try {
-
-      await this.calendarService.updateEvent(info.event.id, {
-        task_name: info.event.title,
+      // 2. Construimos el objeto completo con la info original + las nuevas fechas
+      const updatedEvent = {
+        ...existingEvent,
         start_datetime: info.event.start,
-        end_datetime: info.event.end,
-        patient_name: '',
-        comments: ''
-      });
+        end_datetime: info.event.end || info.event.start // Por si no hay fecha fin
+      };
 
+      await this.calendarService.updateEvent(info.event.id, updatedEvent);
       await this.loadEvents();
-
     } catch (e) {
       console.error(e);
       info.revert();

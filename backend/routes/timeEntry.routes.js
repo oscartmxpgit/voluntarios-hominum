@@ -1,53 +1,231 @@
 const express = require('express');
 const router = express.Router();
+
 const db = require('../config/db');
 const { requireAuth, isCoordinator } = require('../middleware/auth');
 
+// =======================================
+// OBTENER EVENTOS
+// =======================================
+
 router.get('/', requireAuth, async (req, res) => {
-  let sql = 'SELECT * FROM time_entries';
-  const params = [];
-  if (!isCoordinator(req)) { sql += ' WHERE volunteer_email = ?'; params.push(req.user.email); }
-  sql += ' ORDER BY start_datetime DESC';
-  const [rows] = await db.execute(sql, params);
-  res.json(rows);
+
+  try {
+
+    let sql = `
+      SELECT
+        t.*,
+        p.name AS patient_name
+      FROM time_entries t
+      LEFT JOIN patients p
+        ON p.id = t.patient_id
+    `;
+
+    const params = [];
+
+    if (!isCoordinator(req)) {
+      sql += ` WHERE t.volunteer_id = ?`;
+      params.push(req.user.id);
+    }
+
+    sql += ` ORDER BY t.start_datetime DESC`;
+
+    const [rows] = await db.execute(sql, params);
+
+    res.json(rows);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+
 });
+
+// =======================================
+// SOLO MIS EVENTOS
+// =======================================
 
 router.get('/mine', requireAuth, async (req, res) => {
-  const [rows] = await db.execute(
-    `SELECT *
-     FROM time_entries
-     WHERE volunteer_email = ?
-     ORDER BY start_datetime DESC`,
-    [req.user.email]
-  );
 
-  res.json(rows);
+  try {
+
+    const [rows] = await db.execute(
+      `
+      SELECT
+        t.*,
+        p.name AS patient_name
+      FROM time_entries t
+      LEFT JOIN patients p
+        ON p.id = t.patient_id
+      WHERE t.volunteer_id = ?
+      ORDER BY t.start_datetime DESC
+      `,
+      [req.user.id]
+    );
+
+    res.json(rows);
+
+  } catch (err) {
+
+    console.error(err);
+    res.status(500).json({ error: err.message });
+
+  }
+
 });
+
+// =======================================
+// CREAR
+// =======================================
 
 router.post('/', requireAuth, async (req, res) => {
-  const { task_name, start_datetime, end_datetime, patient_name, comments } = req.body;
-  const [result] = await db.execute(
-    'INSERT INTO time_entries (volunteer_email, task_name, start_datetime, end_datetime, patient_name, comments) VALUES (?, ?, ?, ?, ?, ?)',
-    [req.user.email, task_name, start_datetime, end_datetime, patient_name, comments]
-  );
-  res.status(201).json({ id: result.insertId });
+
+  try {
+
+    const {
+      task_name,
+      start_datetime,
+      end_datetime,
+      patient_id,
+      comments
+    } = req.body;
+
+    const [result] = await db.execute(
+      `
+      INSERT INTO time_entries
+      (
+        volunteer_id,
+        patient_id,
+        task_name,
+        start_datetime,
+        end_datetime,
+        comments
+      )
+      VALUES (?,?,?,?,?,?)
+      `,
+      [
+        req.user.id,
+        patient_id || null,
+        task_name,
+        start_datetime,
+        end_datetime,
+        comments
+      ]
+    );
+
+    res.status(201).json({
+      id: result.insertId
+    });
+
+  } catch (err) {
+
+    console.error(err);
+    res.status(500).json({ error: err.message });
+
+  }
+
 });
+
+// =======================================
+// ACTUALIZAR
+// =======================================
 
 router.put('/:id', requireAuth, async (req, res) => {
-  const { task_name, start_datetime, end_datetime, patient_name, comments } = req.body;
-  let sql = 'UPDATE time_entries SET task_name=?, start_datetime=?, end_datetime=?, patient_name=?, comments=? WHERE id=?';
-  const params = [task_name, start_datetime, end_datetime, patient_name, comments, req.params.id];
-  if (!isCoordinator(req)) { sql += ' AND volunteer_email = ?'; params.push(req.user.email); }
-  const [result] = await db.execute(sql, params);
-  result.affectedRows === 0 ? res.status(404).json({ error: 'No autorizado' }) : res.json({ message: 'OK' });
+
+  try {
+
+    const {
+      task_name,
+      start_datetime,
+      end_datetime,
+      patient_id,
+      comments
+    } = req.body;
+
+    let sql = `
+      UPDATE time_entries
+      SET
+        task_name=?,
+        start_datetime=?,
+        end_datetime=?,
+        patient_id=?,
+        comments=?
+      WHERE id=?
+    `;
+
+    const params = [
+      task_name,
+      start_datetime,
+      end_datetime,
+      patient_id || null,
+      comments,
+      req.params.id
+    ];
+
+    if (!isCoordinator(req)) {
+      sql += ` AND volunteer_id=?`;
+      params.push(req.user.id);
+    }
+
+    const [result] = await db.execute(sql, params);
+
+    if (!result.affectedRows) {
+      return res.status(404).json({
+        error: 'No autorizado'
+      });
+    }
+
+    res.json({
+      message: 'OK'
+    });
+
+  } catch (err) {
+
+    console.error(err);
+    res.status(500).json({ error: err.message });
+
+  }
+
 });
 
+// =======================================
+// ELIMINAR
+// =======================================
+
 router.delete('/:id', requireAuth, async (req, res) => {
-  let sql = 'DELETE FROM time_entries WHERE id=?';
-  const params = [req.params.id];
-  if (!isCoordinator(req)) { sql += ' AND volunteer_email = ?'; params.push(req.user.email); }
-  const [result] = await db.execute(sql, params);
-  result.affectedRows === 0 ? res.status(404).json({ error: 'No autorizado' }) : res.json({ message: 'OK' });
+
+  try {
+
+    let sql =
+      `DELETE FROM time_entries WHERE id=?`;
+
+    const params = [req.params.id];
+
+    if (!isCoordinator(req)) {
+      sql += ` AND volunteer_id=?`;
+      params.push(req.user.id);
+    }
+
+    const [result] =
+      await db.execute(sql, params);
+
+    if (!result.affectedRows) {
+      return res.status(404).json({
+        error: 'No autorizado'
+      });
+    }
+
+    res.json({
+      message: 'OK'
+    });
+
+  } catch (err) {
+
+    console.error(err);
+    res.status(500).json({ error: err.message });
+
+  }
+
 });
 
 module.exports = router;
