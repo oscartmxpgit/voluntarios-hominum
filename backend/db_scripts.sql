@@ -4,9 +4,9 @@
 CREATE DATABASE IF NOT EXISTS hominum_db;
 USE hominum_db;
 
--- 1. Usuarios
-DROP TABLE IF EXISTS users;
-CREATE TABLE users (
+-- 1. Voluntarios
+DROP TABLE IF EXISTS volunteers;
+CREATE TABLE volunteers (
     id INT AUTO_INCREMENT PRIMARY KEY,
     clerk_user_id VARCHAR(255) UNIQUE NOT NULL, -- ID único de Clerk
     email VARCHAR(255) NOT NULL UNIQUE,
@@ -32,7 +32,7 @@ CREATE TABLE time_entries (
 -- DATOS DE SEMILLA (MODIFICA LOS IDs)
 -- ==========================================
 -- Inserta aquí los IDs reales obtenidos de tu panel de Clerk:
-INSERT INTO users (clerk_user_id, email, is_coordinator) VALUES 
+INSERT INTO volunteers (clerk_user_id, email, is_coordinator) VALUES 
 ('user_3FffVy66t3QKeVtG0lMisCZGbUj', 'oscar.trujillo1985@gmail.com', 1),
 ('user_3FffcgASVfTP1wvNm3PZR6RSY4Z', 'oscartmxp@gmail.com', 0);
 
@@ -65,10 +65,10 @@ DROP TABLE IF EXISTS patients;
 CREATE TABLE patients (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    assigned_volunteer_id INT NULL, -- Enlazado al ID del voluntario de la tabla users
+    assigned_volunteer_id INT NULL, -- Enlazado al ID del voluntario de la tabla volunteers
     status ENUM('active', 'inactive') DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (assigned_volunteer_id) REFERENCES users(id) ON DELETE SET NULL
+    FOREIGN KEY (assigned_volunteer_id) REFERENCES volunteers(id) ON DELETE SET NULL
 );
 
 -- Datos de semilla opcionales para pruebas

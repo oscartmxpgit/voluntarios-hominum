@@ -20,14 +20,14 @@ export interface Volunteer {
 export class PatientsService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/patients`;
-  private usersApiUrl = `${environment.apiUrl}/users`;
+  private volunteersApiUrl = `${environment.apiUrl}/volunteers`;
 
   async getAll(): Promise<Patient[]> {
     return await firstValueFrom(this.http.get<Patient[]>(this.apiUrl));
   }
 
   async getVolunteers(): Promise<Volunteer[]> {
-    return await firstValueFrom(this.http.get<Volunteer[]>(`${this.usersApiUrl}/volunteers`)) || [];
+    return await firstValueFrom(this.http.get<Volunteer[]>(`${this.volunteersApiUrl}/volunteers`)) || [];
   }
 
   async create(patient: Patient): Promise<void> {

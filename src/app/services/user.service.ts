@@ -4,20 +4,20 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
-export class UserService {
+export class VolunteersService {
 
   private http = inject(HttpClient);
   private readonly API_URL = environment.apiUrl;
 
   async getCurrentUserProfile(): Promise<any> {
     return await firstValueFrom(
-      this.http.get<any>(`${this.API_URL}/users/me`)
+      this.http.get<any>(`${this.API_URL}/volunteers/me`)
     );
   }
 
-  async getAllUsers(): Promise<any[]> {
+  async getAllVolunteers(): Promise<any[]> {
     return await firstValueFrom(
-      this.http.get<any[]>(`${this.API_URL}/users`)
+      this.http.get<any[]>(`${this.API_URL}/volunteers`)
     );
   }
 

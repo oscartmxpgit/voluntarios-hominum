@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { VolunteersService, User } from '../../services/volunteers.service';
+import { VolunteersService, Volunteer } from '../../services/volunteers.service';
 
 @Component({
   selector: 'app-volunteers',
@@ -13,7 +13,7 @@ import { VolunteersService, User } from '../../services/volunteers.service';
 export class VolunteersComponent implements OnInit {
   private volunteersService = inject(VolunteersService);
 
-  volunteers: User[] = [];
+  volunteers: Volunteer[] = [];
   loading = true;
   showForm = false;
   newEmail = '';
@@ -49,14 +49,14 @@ export class VolunteersComponent implements OnInit {
     }
   }
 
-  async deleteUser(user: User): Promise<void> {
-    if (user.is_coordinator === 1) {
+  async deleteUser(volunteer: Volunteer): Promise<void> {
+    if (volunteer.is_coordinator === 1) {
       alert('No se puede eliminar a un coordinador.');
       return;
     }
-    if (!confirm(`¿Seguro que deseas eliminar a ${user.email}?`)) return;
+    if (!confirm(`¿Seguro que deseas eliminar a ${volunteer.email}?`)) return;
     try {
-      await this.volunteersService.delete(user.id);
+      await this.volunteersService.delete(volunteer.id);
       await this.loadData();
     } catch (error) {
       console.error(error);

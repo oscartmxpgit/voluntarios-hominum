@@ -15,7 +15,7 @@ router.get('/', requireAuth, async (req, res) => {
         p.*,
         u.email AS volunteer_email
       FROM patients p
-      LEFT JOIN users u
+      LEFT JOIN volunteers u
         ON p.assigned_volunteer_id = u.id
       ORDER BY p.name ASC
     `;

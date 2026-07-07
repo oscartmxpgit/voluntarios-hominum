@@ -47,7 +47,7 @@ export class AuthService {
       
       const dbUser = await firstValueFrom(
         this.http.get<{id: number, email: string, is_coordinator: boolean}>(
-          `${environment.apiUrl}/users/me`, { headers }
+          `${environment.apiUrl}/volunteers/me`, { headers }
         )
       );
 

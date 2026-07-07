@@ -16,7 +16,7 @@ export const routes: Routes = [
   {
     path: 'dashboard',
     component: DashboardComponent,
-    canActivate: [authGuard, adminGuard],
+    canActivate: [authGuard],
     data: {
       mode: 'all'
     }

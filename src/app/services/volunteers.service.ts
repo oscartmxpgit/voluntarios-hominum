@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 
-export interface User {
+export interface Volunteer {
   id: number;
   clerk_user_id: string;
   email: string;
@@ -14,11 +14,11 @@ export interface User {
 @Injectable({ providedIn: 'root' })
 export class VolunteersService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/users`;
+  private apiUrl = `${environment.apiUrl}/volunteers`;
 
-  async getAll(): Promise<User[]> {
-    const users = await firstValueFrom(this.http.get<User[]>(this.apiUrl));
-    return users || [];
+  async getAll(): Promise<Volunteer[]> {
+    const volunteers = await firstValueFrom(this.http.get<Volunteer[]>(this.apiUrl));
+    return volunteers || [];
   }
 
   // Nuevo método para registrar nuevo usuario

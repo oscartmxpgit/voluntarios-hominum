@@ -7,7 +7,7 @@ const requireAuth = async (req, res, next) => {
     if (!userId) return res.status(401).json({ error: 'No autorizado' });
 
     const [rows] = await db.execute(
-      'SELECT id, email, is_coordinator FROM users WHERE clerk_user_id = ?',
+      'SELECT id, email, is_coordinator FROM volunteers WHERE clerk_user_id = ?',
       [userId]
     );
 
