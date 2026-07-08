@@ -27,83 +27,46 @@ export class DashboardComponent implements OnInit {
   isAdmin = false;
 
   async ngOnInit(): Promise<void> {
-    this.isAdmin = this.authService.isAdmin(); 
+    this.isAdmin = this.authService.isAdmin();
     await this.loadDashboardData();
   }
 
-  // Al tener un solo endpoint que filtra por backend, 
-  // la lógica de "viewMode" ahora solo cambia lo que se muestra en el título.
   async setViewMode(mode: 'personal' | 'global'): Promise<void> {
     if (this.viewMode === mode) return;
     this.viewMode = mode;
-    // No necesitamos llamar a la API de nuevo porque getData() 
-    // siempre trae lo permitido para el usuario actual.
+    // IMPORTANTE: Recargar datos al cambiar de vista
+    await this.loadDashboardData();
   }
 
   private async loadDashboardData(): Promise<void> {
     this.loading = true;
-    this.cdr.detectChanges(); 
-    
+    this.cdr.detectChanges();
     try {
-      // Llamada corregida al servicio unificado
-      this.data = await this.summaryService.getData();
+      this.data = await this.summaryService.getData(this.viewMode);
     } catch (error) {
-      console.error('Error al cargar estadísticas del dashboard:', error);
+      console.error('Error al cargar datos:', error);
     } finally {
       this.loading = false;
-      this.cdr.detectChanges(); 
+      this.cdr.detectChanges();
     }
   }
 
-  toggleYear(year: YearlyStat): void {
-    year.expanded = !year.expanded;
-  }
-
-  toggleMonth(month: MonthlyStat, event: Event): void {
-    event.stopPropagation();
-    month.expanded = !month.expanded;
-  }
+  toggleYear(year: YearlyStat): void { year.expanded = !year.expanded; }
+  toggleMonth(month: MonthlyStat, event: Event): void { event.stopPropagation(); month.expanded = !month.expanded; }
 
   async exportToPDF(): Promise<void> {
     if (!this.dashboardElement) return;
-
     try {
       this.isExporting = true;
-      const element = this.dashboardElement.nativeElement;
-
       this.expandAllForExport();
       this.cdr.detectChanges();
-
-      const canvas = await html2canvas(element, {
-        scale: 2, 
-        useCORS: true,
-        logging: false
-      });
-
+      const canvas = await html2canvas(this.dashboardElement.nativeElement, { scale: 2, useCORS: true });
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
-      
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      
-      let heightLeft = pdfHeight;
-      let position = 0;
-
-      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-      heightLeft -= pdf.internal.pageSize.getHeight();
-
-      while (heightLeft >= 0) {
-        position = heightLeft - pdfHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-        heightLeft -= pdf.internal.pageSize.getHeight();
-      }
-
-      const fileName = `Reporte_Dashboard_${this.viewMode}_${new Date().toISOString().split('T')[0]}.pdf`;
-      pdf.save(fileName);
-
-    } catch (error) {
-      console.error('Error al exportar PDF:', error);
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Reporte_${this.viewMode}_${new Date().toISOString().split('T')[0]}.pdf`);
     } finally {
       this.isExporting = false;
       this.resetExpansions();
@@ -113,18 +76,12 @@ export class DashboardComponent implements OnInit {
 
   private expandAllForExport(): void {
     if (!this.data) return;
-    this.data.yearlyHistory.forEach(year => {
-      year.expanded = true;
-      year.months.forEach(month => month.expanded = true);
-    });
+    this.data.yearlyHistory.forEach(year => { year.expanded = true; year.months.forEach(month => month.expanded = true); });
   }
 
   private resetExpansions(): void {
     if (!this.data) return;
     const currentYear = new Date().getFullYear();
-    this.data.yearlyHistory.forEach(year => {
-      year.expanded = year.year === currentYear;
-      year.months.forEach(month => month.expanded = false);
-    });
+    this.data.yearlyHistory.forEach(year => { year.expanded = year.year === currentYear; year.months.forEach(month => month.expanded = false); });
   }
 }

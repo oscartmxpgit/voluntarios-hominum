@@ -7,6 +7,7 @@ const { requireAuth, isCoordinator } = require('../middleware/auth');
 // =======================================
 // OBTENER EVENTOS
 // =======================================
+// OBTENER EVENTOS (Actualizado para soportar scope=all)
 router.get('/', requireAuth, async (req, res) => {
   try {
     let sql = `
@@ -20,7 +21,14 @@ router.get('/', requireAuth, async (req, res) => {
     `;
 
     const params = [];
-    if (!isCoordinator(req)) {
+    
+    // LÓGICA DE FILTRADO:
+    // Si no es coordinador O si pide scope=all pero no es coordinador, forzamos su ID.
+    // Solo si ES COORDINADOR y pide scope=all, omitimos el filtro.
+    const esCoordinador = isCoordinator(req);
+    const quiereGlobal = req.query.scope === 'all';
+
+    if (!esCoordinador || !quiereGlobal) {
       sql += ` WHERE t.volunteer_id = ?`;
       params.push(req.user.id);
     }
