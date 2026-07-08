@@ -21,6 +21,7 @@
           <a routerLink="/contact-list" routerLinkActive="active" class="nav-link">Contactos</a>
           <a routerLink="/patients" routerLinkActive="active" class="nav-link">Pacientes</a>
           <a routerLink="/volunteers" routerLinkActive="active" class="nav-link">Voluntarios</a>
+          <a routerLink="/event-types" routerLinkActive="active" class="nav-link">Eventos</a>
         }
       }
     </div>
@@ -97,7 +98,7 @@
       @if (authService.isAdmin()) {
         <a routerLink="/contact-list" routerLinkActive="active" (click)="toggleMenu()">👥 Contactos</a>
         <a routerLink="/patients" routerLinkActive="active" (click)="toggleMenu()">🤕 Pacientes</a>
-        <a routerLink="/volunteers" routerLinkActive="active" (click)="toggleMenu()">🤝 Voluntarios</a>
+        <a routerLink="/event-types" routerLinkActive="active" (click)="toggleMenu()">📅 Eventos</a>
       }
     }
   </nav>

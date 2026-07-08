@@ -1,0 +1,56 @@
+<main class="events-page">
+  <header class="page-header">
+    <h1>Gestión de Eventos Generales</h1>
+    <button class="btn-primary" (click)="openCreateModal()">➕ Nuevo Evento</button>
+  </header>
+
+  @if (showForm) {
+    <section class="form-card">
+      <h3>{{ isEditing ? 'Editar Evento' : 'Nuevo Evento' }}</h3>
+      <form (ngSubmit)="saveEvent()">
+        <div class="form-group">
+          <label>Título</label>
+          <input type="text" [(ngModel)]="currentEvent.title" name="title" required placeholder="Nombre del evento">
+        </div>
+        <div class="form-group">
+          <label>Inicio</label>
+          <input type="datetime-local" [(ngModel)]="currentEvent.start_datetime" name="start" required>
+        </div>
+        <div class="form-group">
+          <label>Fin</label>
+          <input type="datetime-local" [(ngModel)]="currentEvent.end_datetime" name="end" required>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="cancelForm()">Cancelar</button>
+          <button type="submit" class="btn-save">Guardar Evento</button>
+        </div>
+      </form>
+    </section>
+  }
+
+  <section class="table-container">
+    <table class="events-table">
+      <thead>
+        <tr>
+          <th>Título</th>
+          <th>Inicio</th>
+          <th>Fin</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (ev of events; track ev.id) {
+          <tr>
+            <td>{{ ev.title }}</td>
+            <td>{{ ev.start_datetime | date:'short' }}</td>
+            <td>{{ ev.end_datetime | date:'short' }}</td>
+            <td class="text-center">
+              <button class="btn-edit" (click)="openEditModal(ev)">✏️ Editar</button>
+              <button class="btn-delete" (click)="ev.id && deleteEvent(ev.id)">🗑️ Eliminar</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </section>
+</main>

@@ -8,6 +8,7 @@ import { adminGuard } from './services/admin.guard'; // Importa el nuevo guard
 import { ContactListComponent } from './components/contact-list/contact-list.component';
 import { PatientsComponent } from './pages/patients/patients.component';
 import { VolunteersComponent } from './pages/volunteers/volunteers.component';
+import { GeneralEventsComponent } from './pages/general-events/general-events.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -34,6 +35,16 @@ export const routes: Routes = [
   {
     path: 'patients',
     component: PatientsComponent,
+    canActivate: [authGuard, adminGuard]
+  },
+  {
+    path: 'patients',
+    component: PatientsComponent,
+    canActivate: [authGuard, adminGuard]
+  },
+  {
+    path: 'event-types',
+    component: GeneralEventsComponent,
     canActivate: [authGuard, adminGuard]
   },
   { path: '**', redirectTo: '' }

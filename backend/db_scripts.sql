@@ -37,17 +37,45 @@ DROP TABLE IF EXISTS time_entries;
 CREATE TABLE time_entries (
     id INT AUTO_INCREMENT PRIMARY KEY,
     volunteer_id INT NOT NULL,
-    patient_id INT NULL,
     start_datetime DATETIME NOT NULL,
     end_datetime DATETIME NOT NULL,
     comments TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_timeentry_volunteer FOREIGN KEY (volunteer_id) REFERENCES volunteers(id) ON DELETE CASCADE,
-    CONSTRAINT fk_timeentry_patient FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE
-    SET
-        NULL
+
+    CONSTRAINT fk_timeentry_volunteer
+        FOREIGN KEY (volunteer_id)
+        REFERENCES volunteers(id)
+        ON DELETE CASCADE
 );
 
+DROP TABLE IF EXISTS patient_time_entries;
+
+CREATE TABLE patient_time_entries (
+    time_entry_id INT PRIMARY KEY,
+    patient_id INT NOT NULL,
+
+    CONSTRAINT fk_patienttimeentry_timeentry
+        FOREIGN KEY (time_entry_id)
+        REFERENCES time_entries(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_patienttimeentry_patient
+        FOREIGN KEY (patient_id)
+        REFERENCES patients(id)
+        ON DELETE CASCADE
+);
+
+DROP TABLE IF EXISTS general_time_entries;
+
+CREATE TABLE general_time_entries (
+    time_entry_id INT PRIMARY KEY,
+    title VARCHAR(150) NOT NULL,
+
+    CONSTRAINT fk_generaltimeentry_timeentry
+        FOREIGN KEY (time_entry_id)
+        REFERENCES time_entries(id)
+        ON DELETE CASCADE
+);
 
 -- ==========================================
 -- 3. Tabla de Solicitudes de Contacto
@@ -90,3 +118,15 @@ VALUES
     ('María Carmen Gómez', 2),
     -- Suponiendo que el ID 2 es 'oscartmxp@gmail.com'
     ('Manuel Rodríguez', NULL);
+
+
+DROP TABLE IF EXISTS event_types;
+
+CREATE TABLE event_types (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Datos iniciales
+INSERT INTO event_types (name) VALUES ('Reunión'), ('Formación'), ('Administrativo'), ('Otro');

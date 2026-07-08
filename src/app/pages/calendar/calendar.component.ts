@@ -24,7 +24,7 @@ export class CalendarComponent implements OnInit {
   isFormVisible = false;
   selectedEvent: any = null;
   private rawEvents: any[] = [];
-  
+
   // Propiedad para los eventos, FullCalendar la detectará si cambia
   calendarEvents: any[] = [];
 
@@ -56,21 +56,26 @@ export class CalendarComponent implements OnInit {
 
   async loadEvents(): Promise<void> {
     const allEvents = await this.calendarService.getAllEvents();
+    console.log('Estructura de eventos recibida:', allEvents); // <--- MIRA ESTO
     const user = this.authService.user();
-    
-    // Filtrado mejorado: asegúrate de que el backend envíe el campo email o volunteer_id
+
     this.rawEvents = allEvents.filter(e =>
       user?.isCoordinator ? true : (e.volunteer_id === user?.id)
     );
 
-    // Mapeo directo a formato FullCalendar
-    this.calendarEvents = this.rawEvents.map(e => ({
-      id: String(e.id),
-      title: String(e.patient_name ?? 'Sin nombre'),
-      start: e.start_datetime,
-      end: e.end_datetime,
-      allDay: false
-    }));
+    // Mapeo corregido: sin añadir ceros y tomando el title directamente
+    this.calendarEvents = this.rawEvents.map(e => {
+      // Determinamos el título según lo que venga en el objeto del backend
+      const titleValue = e.patient_name ? e.patient_name : (e.title || 'Evento sin título');
+
+      return {
+        id: String(e.id),
+        title: titleValue,
+        start: e.start_datetime,
+        end: e.end_datetime,
+        allDay: false
+      };
+    });
   }
 
   handleDateClick(info: any): void {

@@ -2,15 +2,32 @@
   <div class="modal-content">
     <h3>{{ eventData.id ? 'Editar Evento' : 'Nuevo Evento' }}</h3>
 
+    <div class="form-group-radio">
+      <label><input type="radio" [(ngModel)]="eventType" value="patient" (change)="onTypeChange()"> Paciente</label>
+      <label><input type="radio" [(ngModel)]="eventType" value="general" (change)="onTypeChange()"> General</label>
+    </div>
+
+    @if (eventType === 'patient') {
     <div class="form-group">
       <label>Paciente (*)</label>
-      <select [(ngModel)]="eventData.patient_id" name="patient_id" required>
+      <select [(ngModel)]="eventData.patient_id" required>
         <option [ngValue]="null" disabled>Seleccione un paciente</option>
         @for (patient of patients; track patient.id) {
-          <option [ngValue]="patient.id">{{ patient.name }}</option>
+        <option [ngValue]="patient.id">{{ patient.name }}</option>
         }
       </select>
     </div>
+    } @else {
+    <div class="form-group">
+      <label>Tipo de Evento (*)</label>
+      <select [(ngModel)]="eventData.title" required>
+        <option [ngValue]="undefined" disabled>Seleccione una categoría</option>
+        @for (type of eventTypes; track type.id) {
+        <option [ngValue]="type.title">{{ type.title }}</option>
+        }
+      </select>
+    </div>
+    }
 
     <div class="form-group">
       <label>Inicio</label>
@@ -30,7 +47,7 @@
     <div class="actions">
       <button type="button" class="btn-save" (click)="save()">Guardar</button>
       @if (eventData.id) {
-        <button type="button" class="btn-delete" (click)="onDelete()">Eliminar</button>
+      <button type="button" class="btn-delete" (click)="onDelete()">Eliminar</button>
       }
       <button type="button" class="btn-cancel" (click)="close.emit()">Cancelar</button>
     </div>

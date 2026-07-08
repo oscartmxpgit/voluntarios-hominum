@@ -1,6 +1,5 @@
 <main class="dashboard-page">
   
-  <!-- View Toggle Header -->
   <header class="dashboard-header mb-4 flex justify-between items-center">
     <h1>{{ viewMode === 'personal' ? 'Mis Estadísticas' : 'Estadísticas Generales' }}</h1>
     <div class="view-toggle button-group">
@@ -11,7 +10,6 @@
         Mis horas
       </button>
       
-      <!-- Botón deshabilitado si no es coordinador -->
       <button 
         [class.active]="viewMode === 'global'" 
         (click)="setViewMode('global')"
@@ -27,36 +25,29 @@
     <div class="skeleton-loader">Cargando métricas...</div>
   } @else if (data) {
     
-    <!-- KPIs Generales -->
     <section class="kpi-banner">
       <div class="kpi-box">
-        <span class="kpi-title">TOTAL HORAS HISTÓRICAS</span>
+        <span class="kpi-title">TOTAL HISTÓRICO</span>
         <span class="kpi-value">{{ data.kpis.totalHistoricalHours | formatDuration }}</span>
       </div>
       <div class="kpi-divider"></div>
       <div class="kpi-box highlight">
-        <span class="kpi-title">HORAS ESTE MES</span>
+        <span class="kpi-title">HORAS MES ACTUAL</span>
         <span class="kpi-value">{{ data.kpis.hoursThisMonth | formatDuration }}</span>
       </div>
       <div class="kpi-divider"></div>
       <div class="kpi-box">
-        <span class="kpi-title">VISITAS ESTE MES</span>
+        <span class="kpi-title">VISITAS MES</span>
         <span class="kpi-value">{{ data.kpis.visitsThisMonth }}</span>
       </div>
       <div class="kpi-divider"></div>
       <div class="kpi-box">
-        <span class="kpi-title">PACIENTES ESTE MES</span>
+        <span class="kpi-title">PACIENTES MES</span>
         <span class="kpi-value">{{ data.kpis.patientsThisMonth }}</span>
-      </div>
-      <div class="kpi-divider"></div>
-      <div class="kpi-box">
-        <span class="kpi-title">PACIENTES HISTÓRICOS</span>
-        <span class="kpi-value">{{ data.kpis.historicalPatients }}</span>
       </div>
     </section>
 
     <div class="dashboard-grid">
-      <!-- Columna Izquierda: Mes Actual -->
       <section class="current-month-section">
         <h2>📅 Mes Actual ({{ data.currentMonth?.monthName }})</h2>
         
@@ -73,43 +64,19 @@
                   <div class="bar-fill" [style.width.%]="patient.percentage"></div>
                 </div>
               </div>
-            }
-            @if (data.currentMonth?.patients?.length === 0) {
+            } @empty {
               <p class="empty-state">No hay pacientes registrados este mes.</p>
-            }
-          </div>
-        </div>
-
-        <div class="card mt-4">
-          <h3>Horas por Tarea</h3>
-          <div class="bar-chart-container">
-            @for (task of data.currentMonth?.tasks; track task.name) {
-              <div class="bar-item">
-                <div class="bar-header">
-                  <span>{{ task.name }}</span>
-                  <span class="bar-value">{{ task.hours | formatDuration }}</span>
-                </div>
-                <div class="bar-track">
-                  <div class="bar-fill task-fill" [style.width.%]="task.percentage"></div>
-                </div>
-              </div>
-            }
-            @if (data.currentMonth?.tasks?.length === 0) {
-              <p class="empty-state">No hay tareas registradas este mes.</p>
             }
           </div>
         </div>
       </section>
 
-      <!-- Columna Derecha: Histórico -->
       <section class="history-section">
         <h2>📊 Evolución e Histórico</h2>
 
-        <!-- Gráfico de Evolución -->
         <div class="card evolution-card">
           <h3>Evolución de horas</h3>
           <div class="bar-chart-container">
-            <!-- Mes Actual en la evolución -->
             @if (data.currentMonth) {
               <div class="bar-item">
                 <div class="bar-header">
@@ -122,7 +89,6 @@
               </div>
             }
 
-            <!-- Meses Anteriores -->
             @for (month of data.history; track month.monthKey) {
               <div class="bar-item">
                 <div class="bar-header">
@@ -137,11 +103,9 @@
           </div>
         </div>
 
-        <!-- Acordeón de Detalles Históricos -->
         <div class="accordion-container mt-4">
           @for (month of data.history; track month.monthKey) {
             <div class="accordion-item" [class.expanded]="month.expanded">
-              
               <div class="accordion-header" (click)="toggleMonth(month)">
                 <div class="accordion-title">
                   <span class="month-name">{{ month.monthName }}</span>

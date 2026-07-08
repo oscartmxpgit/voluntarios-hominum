@@ -10,16 +10,16 @@ const { requireAuth, isCoordinator } = require('../middleware/auth');
 router.get('/', requireAuth, async (req, res) => {
   try {
     let sql = `
-      SELECT
-        t.*,
-        p.name AS patient_name
+      SELECT t.*, 
+             p.name AS patient_name, 
+             g.title AS title
       FROM time_entries t
-      LEFT JOIN patients p
-        ON p.id = t.patient_id
+      LEFT JOIN patient_time_entries pte ON t.id = pte.time_entry_id
+      LEFT JOIN patients p ON p.id = pte.patient_id
+      LEFT JOIN general_time_entries g ON t.id = g.time_entry_id
     `;
 
     const params = [];
-
     if (!isCoordinator(req)) {
       sql += ` WHERE t.volunteer_id = ?`;
       params.push(req.user.id);
@@ -28,9 +28,7 @@ router.get('/', requireAuth, async (req, res) => {
     sql += ` ORDER BY t.start_datetime DESC`;
 
     const [rows] = await db.execute(sql, params);
-
     res.json(rows);
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -38,132 +36,91 @@ router.get('/', requireAuth, async (req, res) => {
 });
 
 // =======================================
-// SOLO MIS EVENTOS
-// =======================================
-router.get('/mine', requireAuth, async (req, res) => {
-  try {
-
-    const [rows] = await db.execute(
-      `
-      SELECT
-        t.*,
-        p.name AS patient_name
-      FROM time_entries t
-      LEFT JOIN patients p
-        ON p.id = t.patient_id
-      WHERE t.volunteer_id = ?
-      ORDER BY t.start_datetime DESC
-      `,
-      [req.user.id]
-    );
-
-    res.json(rows);
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// =======================================
-// CREAR
+// CREAR EVENTO (Transaccional)
 // =======================================
 router.post('/', requireAuth, async (req, res) => {
+  const { start_datetime, end_datetime, comments, patient_id, title } = req.body;
+  const connection = await db.getConnection();
+
   try {
+    await connection.beginTransaction();
 
-    const {
-      start_datetime,
-      end_datetime,
-      patient_id,
-      comments
-    } = req.body;
-
-    const [result] = await db.execute(
-      `
-      INSERT INTO time_entries
-      (
-        volunteer_id,
-        patient_id,
-        start_datetime,
-        end_datetime,
-        comments
-      )
-      VALUES (?, ?, ?, ?, ?)
-      `,
-      [
-        req.user.id,
-        patient_id ?? null,
-        start_datetime,
-        end_datetime,
-        comments ?? null
-      ]
+    // 1. Insertar en tabla base
+    const [result] = await connection.execute(
+      `INSERT INTO time_entries (volunteer_id, start_datetime, end_datetime, comments) VALUES (?, ?, ?, ?)`,
+      [req.user.id, start_datetime, end_datetime, comments ?? null]
     );
 
-    res.status(201).json({
-      id: result.insertId
-    });
+    const timeEntryId = result.insertId;
 
+    // 2. Insertar en tabla específica según tipo
+    if (patient_id) {
+      await connection.execute(
+        `INSERT INTO patient_time_entries (time_entry_id, patient_id) VALUES (?, ?)`,
+        [timeEntryId, patient_id]
+      );
+    } else if (title) {
+      await connection.execute(
+        `INSERT INTO general_time_entries (time_entry_id, title) VALUES (?, ?)`,
+        [timeEntryId, title]
+      );
+    }
+
+    await connection.commit();
+    res.status(201).json({ id: timeEntryId });
   } catch (err) {
+    await connection.rollback();
     console.error(err);
-    res.status(500).json({
-      error: err.message
-    });
+    res.status(500).json({ error: err.message });
+  } finally {
+    connection.release();
   }
 });
 
 // =======================================
-// ACTUALIZAR
+// ACTUALIZAR EVENTO
 // =======================================
 router.put('/:id', requireAuth, async (req, res) => {
+  const { start_datetime, end_datetime, comments, patient_id, title } = req.body;
+  const connection = await db.getConnection();
+
   try {
+    await connection.beginTransaction();
 
-    const {
-      start_datetime,
-      end_datetime,
-      patient_id,
-      comments
-    } = req.body;
-
-    let sql = `
-      UPDATE time_entries
-      SET
-        start_datetime = ?,
-        end_datetime = ?,
-        patient_id = ?,
-        comments = ?
-      WHERE id = ?
-    `;
-
-    const params = [
-      start_datetime,
-      end_datetime,
-      patient_id ?? null,
-      comments ?? null,
-      req.params.id
-    ];
+    // Actualizar tabla base
+    let sql = `UPDATE time_entries SET start_datetime = ?, end_datetime = ?, comments = ? WHERE id = ?`;
+    const params = [start_datetime, end_datetime, comments ?? null, req.params.id];
 
     if (!isCoordinator(req)) {
       sql += ` AND volunteer_id = ?`;
       params.push(req.user.id);
     }
 
-    const [result] = await db.execute(sql, params);
+    const [result] = await connection.execute(sql, params);
 
-    if (!result.affectedRows) {
-      return res.status(404).json({
-        error: 'Evento no encontrado o no autorizado'
-      });
+    if (result.affectedRows === 0) {
+      await connection.rollback();
+      return res.status(404).json({ error: 'Evento no encontrado o no autorizado' });
     }
 
-    res.json({
-      message: 'OK'
-    });
+    // Actualizar/Sincronizar tablas específicas (DELETE/INSERT simple para consistencia)
+    await connection.execute(`DELETE FROM patient_time_entries WHERE time_entry_id = ?`, [req.params.id]);
+    await connection.execute(`DELETE FROM general_time_entries WHERE time_entry_id = ?`, [req.params.id]);
 
+    if (patient_id) {
+      await connection.execute(`INSERT INTO patient_time_entries (time_entry_id, patient_id) VALUES (?, ?)`, [req.params.id, patient_id]);
+    } else if (title) {
+      await connection.execute(`INSERT INTO general_time_entries (time_entry_id, title) VALUES (?, ?)`, [req.params.id, title]);
+    }
+
+    await connection.commit();
+    res.json({ message: 'OK' });
   } catch (err) {
+    await connection.rollback();
     console.error(err);
-    res.status(500).json({
-      error: err.message
-    });
+    res.status(500).json({ error: err.message });
+  } finally {
+    connection.release();
   }
 });
 
@@ -172,12 +129,7 @@ router.put('/:id', requireAuth, async (req, res) => {
 // =======================================
 router.delete('/:id', requireAuth, async (req, res) => {
   try {
-
-    let sql = `
-      DELETE FROM time_entries
-      WHERE id = ?
-    `;
-
+    let sql = `DELETE FROM time_entries WHERE id = ?`;
     const params = [req.params.id];
 
     if (!isCoordinator(req)) {
@@ -188,20 +140,13 @@ router.delete('/:id', requireAuth, async (req, res) => {
     const [result] = await db.execute(sql, params);
 
     if (!result.affectedRows) {
-      return res.status(404).json({
-        error: 'Evento no encontrado o no autorizado'
-      });
+      return res.status(404).json({ error: 'Evento no encontrado o no autorizado' });
     }
 
-    res.json({
-      message: 'OK'
-    });
-
+    res.json({ message: 'OK' });
   } catch (err) {
     console.error(err);
-    res.status(500).json({
-      error: err.message
-    });
+    res.status(500).json({ error: err.message });
   }
 });
 
