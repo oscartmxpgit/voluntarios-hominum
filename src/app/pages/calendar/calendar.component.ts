@@ -56,7 +56,6 @@ export class CalendarComponent implements OnInit {
 
   async loadEvents(): Promise<void> {
     const allEvents = await this.calendarService.getAllEvents();
-    console.log('Estructura de eventos recibida:', allEvents); // <--- MIRA ESTO
     const user = this.authService.user();
 
     this.rawEvents = allEvents.filter(e =>

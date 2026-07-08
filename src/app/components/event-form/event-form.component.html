@@ -1,16 +1,16 @@
 <div class="modal-container">
   <div class="modal-content">
-    <h3>{{ eventData.id ? 'Editar Evento' : 'Nuevo Evento' }}</h3>
+    <h3>{{ formModel.id ? 'Editar Evento' : 'Nuevo Evento' }}</h3>
 
     <div class="form-group-radio">
       <label><input type="radio" [(ngModel)]="eventType" value="patient" (change)="onTypeChange()"> Paciente</label>
-      <label><input type="radio" [(ngModel)]="eventType" value="general" (change)="onTypeChange()"> General</label>
+      <label><input type="radio" [(ngModel)]="eventType" value="general" (change)="onTypeChange()"> Evento</label>
     </div>
 
     @if (eventType === 'patient') {
     <div class="form-group">
       <label>Paciente (*)</label>
-      <select [(ngModel)]="eventData.patient_id" required>
+      <select [(ngModel)]="formModel.patient_id" required>
         <option [ngValue]="null" disabled>Seleccione un paciente</option>
         @for (patient of patients; track patient.id) {
         <option [ngValue]="patient.id">{{ patient.name }}</option>
@@ -20,8 +20,8 @@
     } @else {
     <div class="form-group">
       <label>Tipo de Evento (*)</label>
-      <select [(ngModel)]="eventData.title" required>
-        <option [ngValue]="undefined" disabled>Seleccione una categoría</option>
+      <select [(ngModel)]="formModel.title" required>
+        <option [ngValue]="null" disabled>Seleccione una categoría</option>
         @for (type of eventTypes; track type.id) {
         <option [ngValue]="type.title">{{ type.title }}</option>
         }
@@ -31,22 +31,22 @@
 
     <div class="form-group">
       <label>Inicio</label>
-      <input type="datetime-local" [(ngModel)]="eventData.start_datetime" (change)="onStartChange()" />
+      <input type="datetime-local" [(ngModel)]="formModel.start_datetime" (change)="onStartChange()" />
     </div>
 
     <div class="form-group">
       <label>Fin</label>
-      <input type="datetime-local" [(ngModel)]="eventData.end_datetime" />
+      <input type="datetime-local" [(ngModel)]="formModel.end_datetime" />
     </div>
 
     <div class="form-group">
       <label>Observaciones</label>
-      <textarea [(ngModel)]="eventData.comments" placeholder="Notas adicionales..."></textarea>
+      <textarea [(ngModel)]="formModel.comments" placeholder="Notas adicionales..."></textarea>
     </div>
 
     <div class="actions">
       <button type="button" class="btn-save" (click)="save()">Guardar</button>
-      @if (eventData.id) {
+      @if (formModel.id) {
       <button type="button" class="btn-delete" (click)="onDelete()">Eliminar</button>
       }
       <button type="button" class="btn-cancel" (click)="close.emit()">Cancelar</button>
