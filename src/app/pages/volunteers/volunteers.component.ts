@@ -40,12 +40,31 @@ export class VolunteersComponent implements OnInit {
   async createVolunteer(): Promise<void> {
     if (!this.newEmail) return;
     try {
-      // Ajusta según cómo espera tu API la creación
       await this.volunteersService.create({ email: this.newEmail } as any);
       this.showForm = false;
       await this.loadData();
     } catch (error) {
       console.error('Error al crear usuario:', error);
+    }
+  }
+
+  async toggleActive(volunteer: Volunteer): Promise<void> {
+    if (volunteer.is_coordinator === 1) return;
+
+    // Determinamos el nuevo estado lógico inverso
+    const currentStatus = volunteer.is_active === 1;
+    const newStatus = currentStatus ? 0 : 1;
+
+    try {
+      // Llamada al método update de tu servicio pasándole el ID y el nuevo estado de activación
+      await this.volunteersService.update(volunteer.id, { is_active: newStatus });
+      
+      // Actualizamos el estado de manera local tras confirmar éxito en el backend
+      volunteer.is_active = newStatus;
+    } catch (error) {
+      console.error('Error al cambiar el estado del voluntario:', error);
+      // Revertimos el estado visual recargando el listado si la API da error
+      await this.loadData();
     }
   }
 

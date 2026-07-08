@@ -1,4 +1,3 @@
-// services/auth.guard.ts
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from './auth.service';
@@ -19,9 +18,9 @@ export const authGuard: CanActivateFn = async () => {
 
   // 3. Validación CRÍTICA: Comprobamos si el usuario fue cargado desde la BD
   // Si auth.user() es null, significa que Clerk está logueado pero el backend 
-  // devolvió 403 (Usuario no registrado).
+  // devolvió 403 (Usuario no registrado) o el voluntario está inactivo.
   if (!auth.user()) {
-    console.warn('Usuario no autorizado en base de datos');
+    console.warn('Usuario no autorizado en base de datos o inactivo');
     await auth.logout(); // Cerramos sesión de Clerk para limpiar el estado
     return router.parseUrl('/login');
   }

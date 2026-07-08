@@ -47,14 +47,22 @@ export class AuthService {
       const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
 
       const dbUser = await firstValueFrom(
-        this.http.get<{ id: number, email: string, is_coordinator: boolean }>(
+        // Añadimos is_active a la interfaz de la respuesta HTTP
+        this.http.get<{ id: number, email: string, is_coordinator: boolean, is_active: number | boolean }>(
           `${environment.apiUrl}/volunteers/me`, { headers }
         )
       );
 
+      console.log('DEBUG DB USER:', dbUser); // <--- MIRA ESTO EN LA CONSOLA
+
+      // AJUSTE MÍNIMO: Bloquear si el voluntario no está activo
+      if (!dbUser.is_active) {
+        throw new Error('401 Unauthorized: El voluntario está inactivo');
+      }
+
       const clerkUser = this.clerkService.clerk!.user!;
       this.user.set({
-        id: dbUser.id, // Add this
+        id: dbUser.id,
         email: dbUser.email,
         name: clerkUser.fullName || '',
         picture: clerkUser.imageUrl || '',

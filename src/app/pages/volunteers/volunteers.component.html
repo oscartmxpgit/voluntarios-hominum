@@ -27,6 +27,7 @@
           <tr>
             <th>Email</th>
             <th>Rol</th>
+            <th class="text-center">Estado</th>
             <th class="text-center">Acciones</th>
           </tr>
         </thead>
@@ -38,6 +39,17 @@
                 <span class="badge" [class.coordinator]="v.is_coordinator === 1">
                   {{ v.is_coordinator === 1 ? 'Coordinador' : 'Voluntario' }}
                 </span>
+              </td>
+              <td class="text-center">
+                <label class="switch" [attr.title]="v.is_coordinator === 1 ? 'No se puede desactivar a un coordinador' : null">
+                  <input 
+                    type="checkbox" 
+                    [checked]="v.is_active === 1"
+                    [disabled]="v.is_coordinator === 1"
+                    (change)="toggleActive(v)"
+                  >
+                  <span class="slider round"></span>
+                </label>
               </td>
               <td class="text-center">
                 @if (v.is_coordinator === 0) {

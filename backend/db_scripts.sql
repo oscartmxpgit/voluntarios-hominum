@@ -11,24 +11,27 @@ DROP TABLE IF EXISTS volunteers;
 CREATE TABLE volunteers (
     id INT AUTO_INCREMENT PRIMARY KEY,
     clerk_user_id VARCHAR(255) UNIQUE NOT NULL,
-    -- ID único de Clerk
     email VARCHAR(255) NOT NULL UNIQUE,
     is_coordinator TINYINT(1) NOT NULL DEFAULT 0,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Updated insertion script
 INSERT INTO
-    volunteers (clerk_user_id, email, is_coordinator)
+    volunteers (clerk_user_id, email, is_coordinator, is_active)
 VALUES
     (
         'user_3FffVy66t3QKeVtG0lMisCZGbUj',
         'oscar.trujillo1985@gmail.com',
+        1,
         1
     ),
     (
         'user_3FffcgASVfTP1wvNm3PZR6RSY4Z',
         'oscartmxp@gmail.com',
-        0
+        0,
+        1
     );
 
 -- 2. Entradas de Tiempo

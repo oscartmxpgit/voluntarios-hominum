@@ -8,6 +8,7 @@ export interface Volunteer {
   clerk_user_id: string;
   email: string;
   is_coordinator: number; // 0 o 1
+  is_active: number;      // 0 o 1 (Añadido)
   created_at: string;
 }
 
@@ -24,6 +25,11 @@ export class VolunteersService {
   // Nuevo método para registrar nuevo usuario
   async create(user: { email: string }): Promise<void> {
     await firstValueFrom(this.http.post(this.apiUrl, user));
+  }
+
+  // Nuevo método para actualizar el estado de activación (is_active)
+  async update(id: number, data: { is_active: number }): Promise<void> {
+    await firstValueFrom(this.http.patch(`${this.apiUrl}/${id}`, data));
   }
 
   async updateRole(id: number, isCoordinator: boolean): Promise<void> {

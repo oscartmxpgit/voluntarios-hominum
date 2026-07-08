@@ -42,7 +42,7 @@
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   font-size: 1rem;
-  box-sizing: border-box; /* Importante para el padding */
+  box-sizing: border-box;
 }
 
 .form-actions {
@@ -121,3 +121,65 @@ button:hover { opacity: 0.8; }
 .text-center { text-align: center; }
 .empty-table-state { text-align: center; color: #718096; padding: 3rem; }
 .loader-state { text-align: center; padding: 3rem; color: #718096; }
+
+/* --- DISEÑO DEL TOGGLE SWITCH (ESTADO ACTIVO) --- */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  transition: .3s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .3s;
+}
+
+input:checked + .slider {
+  background-color: #22c55e;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #22c55e;
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+input:disabled + .slider {
+  background-color: #e2e8f0;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.slider.round {
+  border-radius: 24px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
