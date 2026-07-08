@@ -10,7 +10,7 @@
     @if (eventType === 'patient') {
     <div class="form-group">
       <label>Paciente (*)</label>
-      <select [(ngModel)]="formModel.patient_id" required>
+      <select [(ngModel)]="formModel.patient_id" (change)="onPatientChange()" required>
         <option [ngValue]="null" disabled>Seleccione un paciente</option>
         @for (patient of patients; track patient.id) {
         <option [ngValue]="patient.id">{{ patient.name }}</option>
@@ -20,7 +20,7 @@
     } @else {
     <div class="form-group">
       <label>Tipo de Evento (*)</label>
-      <select [(ngModel)]="formModel.title" required>
+      <select [(ngModel)]="formModel.title" (change)="onEventTypeChange()" required>
         <option [ngValue]="null" disabled>Seleccione una categoría</option>
         @for (type of eventTypes; track type.id) {
         <option [ngValue]="type.title">{{ type.title }}</option>

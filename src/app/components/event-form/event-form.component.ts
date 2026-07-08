@@ -34,10 +34,9 @@ export class EventFormComponent implements OnInit, OnChanges {
         this.patients = patientsData || [];
         this.eventTypes = typesData || [];
         
-        // Trigger auto-selection if the catalogs loaded after the input was set
         this.checkAndApplyDefaults();
       } catch (err) {
-        console.error('Error loading data catalogs:', err);
+        console.error('Error al cargar catálogos:', err);
       }
     }
   }
@@ -46,7 +45,6 @@ export class EventFormComponent implements OnInit, OnChanges {
     if (changes['eventData']) {
       const safeValue = this.eventData || {};
       
-      // Map incoming calendar tracking data directly to our form bindings
       this.formModel = {
         ...safeValue,
         patient_id: safeValue.patient_id ?? null,
@@ -63,31 +61,17 @@ export class EventFormComponent implements OnInit, OnChanges {
   }
 
   private checkAndApplyDefaults(): void {
-    // Only apply automation rules to brand-new entries
     if (!this.formModel.id) {
-      
-      // 1. Auto-select if there is exactly 1 patient in the catalog
-      if (this.patients.length === 1 && !this.formModel.patient_id) {
-        this.formModel.patient_id = this.patients[0].id;
-      }
-
-      // 2. Auto-select if there is exactly 1 event type category available
-      if (this.eventTypes.length === 1 && !this.formModel.title) {
-        this.formModel.title = this.eventTypes[0].title;
-      }
-
-      // 3. Fallback timestamp rendering if the calendar did not provide any dates
-      if (!this.formModel.start_datetime) {
-        const now = new Date();
-        now.setMinutes(0, 0, 0);
-        now.setHours(now.getHours() + 1);
-        
-        this.formModel.start_datetime = this.toLocalInput(now);
-        
-        if (!this.formModel.end_datetime) {
-          const end = new Date(now.getTime() + 60 * 60 * 1000);
-          this.formModel.end_datetime = this.toLocalInput(end);
+      if (this.eventType === 'patient') {
+        if (this.patients.length === 1 && !this.formModel.patient_id) {
+          this.formModel.patient_id = this.patients[0].id;
         }
+        this.onPatientChange();
+      } else if (this.eventType === 'general') {
+        if (this.eventTypes.length === 1 && !this.formModel.title) {
+          this.formModel.title = this.eventTypes[0].title;
+        }
+        this.onEventTypeChange();
       }
     }
   }
@@ -99,6 +83,41 @@ export class EventFormComponent implements OnInit, OnChanges {
       this.formModel.patient_id = null;
     }
     this.checkAndApplyDefaults();
+  }
+
+  onEventTypeChange() {
+    // Buscar el tipo de evento seleccionado en el catálogo de BD
+    const selectedType = this.eventTypes.find(type => type.title === this.formModel.title);
+    
+    if (selectedType && selectedType.start_datetime) {
+      // Sobrescribir con la fecha y hora provenientes de la base de datos
+      this.formModel.start_datetime = this.toLocalInput(selectedType.start_datetime);
+      if (selectedType.end_datetime) {
+        this.formModel.end_datetime = this.toLocalInput(selectedType.end_datetime);
+      }
+    } else {
+      // Fallback si no tiene horas definidas
+      this.initializeDefaultTimes();
+    }
+  }
+
+  onPatientChange() {
+    this.initializeDefaultTimes();
+  }
+
+  initializeDefaultTimes() {
+    if (this.formModel.start_datetime) return;
+    
+    const now = new Date();
+    now.setMinutes(0, 0, 0);
+    now.setHours(now.getHours() + 1);
+    
+    this.formModel.start_datetime = this.toLocalInput(now);
+    
+    if (!this.formModel.end_datetime) {
+      const end = new Date(now.getTime() + 60 * 60 * 1000);
+      this.formModel.end_datetime = this.toLocalInput(end);
+    }
   }
 
   @HostListener('document:keydown.escape')
@@ -141,7 +160,20 @@ export class EventFormComponent implements OnInit, OnChanges {
   }
 
   private toLocalInput(value: string | Date): string {
-    const date = new Date(value);
+    if (!value) return '';
+    
+    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) {
+      return value;
+    }
+
+    let dateStr = value;
+    if (typeof value === 'string') {
+      dateStr = value.replace(' ', 'T');
+    }
+    
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return '';
+    
     const offset = date.getTimezoneOffset() * 60000;
     return new Date(date.getTime() - offset).toISOString().slice(0, 16);
   }
