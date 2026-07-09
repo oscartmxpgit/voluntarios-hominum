@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FullCalendarModule } from '@fullcalendar/angular';
 import { CalendarOptions } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -25,7 +25,9 @@ export class CalendarComponent implements OnInit {
   selectedEvent: any = null;
   private rawEvents: any[] = [];
 
-  // Propiedad para los eventos, FullCalendar la detectará si cambia
+  // Estado del filtro: 'all' | 'patients' | 'events'
+  selectedFilter: string = 'all';
+
   calendarEvents: any[] = [];
 
   calendarOptions: CalendarOptions = {
@@ -62,9 +64,24 @@ export class CalendarComponent implements OnInit {
       user?.isCoordinator ? true : (e.volunteer_id === user?.id)
     );
 
-    // Mapeo corregido: sin añadir ceros y tomando el title directamente
-    this.calendarEvents = this.rawEvents.map(e => {
-      // Determinamos el título según lo que venga en el objeto del backend
+    this.applyFilter();
+  }
+
+  onFilterChange(filterType: string): void {
+    this.selectedFilter = filterType;
+    this.applyFilter();
+  }
+
+  applyFilter(): void {
+    let filtered = this.rawEvents;
+
+    if (this.selectedFilter === 'patients') {
+      filtered = this.rawEvents.filter(e => e.patient_name);
+    } else if (this.selectedFilter === 'events') {
+      filtered = this.rawEvents.filter(e => !e.patient_name && e.title);
+    }
+
+    this.calendarEvents = filtered.map(e => {
       const titleValue = e.patient_name ? e.patient_name : (e.title || 'Evento sin título');
 
       return {

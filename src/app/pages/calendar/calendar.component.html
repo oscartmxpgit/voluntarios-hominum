@@ -1,4 +1,37 @@
 <div class="calendar-container">
+  
+  <div class="filter-container">
+    <label class="filter-option">
+      <input 
+        type="radio" 
+        name="eventType" 
+        value="all" 
+        [checked]="selectedFilter === 'all'"
+        (change)="onFilterChange('all')">
+      <span>Todos</span>
+    </label>
+
+    <label class="filter-option">
+      <input 
+        type="radio" 
+        name="eventType" 
+        value="patients" 
+        [checked]="selectedFilter === 'patients'"
+        (change)="onFilterChange('patients')">
+      <span>Visitas</span>
+    </label>
+
+    <label class="filter-option">
+      <input 
+        type="radio" 
+        name="eventType" 
+        value="events" 
+        [checked]="selectedFilter === 'events'"
+        (change)="onFilterChange('events')">
+      <span>Eventos</span>
+    </label>
+  </div>
+
   <full-calendar [options]="calendarOptions" [events]="calendarEvents"></full-calendar>
 
   @if (isFormVisible) {
