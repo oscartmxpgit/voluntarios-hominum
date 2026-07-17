@@ -2,11 +2,11 @@
   RewriteEngine On
   RewriteBase /
 
-  # 1. EXCLUIR EL BACKEND: Si la URL empieza por backend, no hagas nada
-  RewriteCond %{REQUEST_URI} ^/backend/api [NC]
-  RewriteRule ^ - [L]
+  # EXCLUIR CUALQUIER COSA QUE EMPIECE POR /backend/
+  # Esto pasa la petición al servidor Node.js/Passenger directamente
+  RewriteRule ^backend/ - [L,NC]
 
-  # 2. REDIRECCIONAR A ANGULAR: Si no es un archivo físico ni carpeta, ve a index.html
+  # REDIRECCIONAR A ANGULAR: Si no es un archivo físico ni carpeta, ve a index.html
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule . /index.html [L]

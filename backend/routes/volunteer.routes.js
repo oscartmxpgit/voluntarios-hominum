@@ -4,13 +4,27 @@ const db = require('../config/db');
 const { requireAuth, isCoordinator } = require('../middleware/auth');
 
 // 1. Usuario autenticado
-router.get('/me', requireAuth, (req, res) => {
-  res.json(req.user);
+router.get('/me', requireAuth, async (req, res) => {
+  try {
+    if (!req.user) {
+      console.error("DEBUG: /me falló porque req.user es null/undefined");
+      return res.status(401).json({ error: "Usuario no autenticado" });
+    }
+    res.json(req.user);
+  } catch (err) {
+    console.error("ERROR CRÍTICO EN /me:", err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // 2. Comprobar si es coordinador
 router.get('/check-role', requireAuth, (req, res) => {
-  res.json({ isCoordinator: isCoordinator(req) });
+  try {
+    res.json({ isCoordinator: isCoordinator(req) });
+  } catch (err) {
+    console.error("ERROR EN /check-role:", err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // 3. Obtener todos los usuarios (solo coordinadores)
@@ -25,11 +39,12 @@ router.get('/', requireAuth, async (req, res) => {
     );
     res.json(rows);
   } catch (err) {
+    console.error("ERROR EN GET / (volunteers):", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// 4. Obtener solo voluntarios activos (para el selector)
+// 4. Obtener solo voluntarios activos
 router.get('/volunteers', requireAuth, async (req, res) => {
   if (!isCoordinator(req)) {
     return res.status(403).json({ error: 'Solo coordinadores' });
@@ -41,26 +56,25 @@ router.get('/volunteers', requireAuth, async (req, res) => {
     );
     res.json(rows);
   } catch (err) {
+    console.error("ERROR EN GET /volunteers:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// 5. NUEVO: Actualizar el estado de activación (is_active) de un voluntario
+// 5. Actualizar estado
 router.patch('/:id', requireAuth, async (req, res) => {
   if (!isCoordinator(req)) {
-    return res.status(403).json({ error: 'Solo coordinadores pueden editar usuarios' });
+    return res.status(403).json({ error: 'Solo coordinadores pueden editar' });
   }
 
   const { id } = req.params;
   const { is_active } = req.body;
 
-  // Validación rápida del parámetro recibido
   if (is_active === undefined || (is_active !== 0 && is_active !== 1)) {
     return res.status(400).json({ error: 'El parámetro is_active debe ser 0 o 1' });
   }
 
   try {
-    // Protección de seguridad extra: Evitamos que se pueda desactivar a un coordinador indirectamente
     const [userRows] = await db.execute('SELECT is_coordinator FROM volunteers WHERE id = ?', [id]);
     
     if (userRows.length === 0) {
@@ -71,7 +85,6 @@ router.patch('/:id', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'No se puede cambiar el estado de un coordinador' });
     }
 
-    // Ejecutamos la actualización en la BD
     await db.execute(
       'UPDATE volunteers SET is_active = ? WHERE id = ?',
       [is_active, id]
@@ -79,6 +92,7 @@ router.patch('/:id', requireAuth, async (req, res) => {
 
     res.json({ message: 'Estado actualizado correctamente', id, is_active });
   } catch (err) {
+    console.error(`ERROR EN PATCH /${id}:`, err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -95,6 +109,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
     await db.execute('DELETE FROM volunteers WHERE id = ? AND is_coordinator = 0', [id]);
     res.json({ message: 'Usuario eliminado correctamente' });
   } catch (err) {
+    console.error(`ERROR EN DELETE /${id}:`, err);
     res.status(500).json({ error: err.message });
   }
 });

@@ -10,6 +10,10 @@ app.use(cors({
     credentials: true
 }));
 
+app.get('/test', (req, res) => {
+  res.status(200).json({ message: 'El servidor está vivo y respondiendo correctamente' });
+});
+
 app.use(express.json());
 
 // IMPORTANTE: clerkMiddleware DEBE registrarse ANTES de las rutas
