@@ -53,8 +53,6 @@ export class AuthService {
         )
       );
 
-      console.log('DEBUG DB USER:', dbUser); // <--- MIRA ESTO EN LA CONSOLA
-
       // AJUSTE MÍNIMO: Bloquear si el voluntario no está activo
       if (!dbUser.is_active) {
         throw new Error('401 Unauthorized: El voluntario está inactivo');

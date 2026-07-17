@@ -1,0 +1,48 @@
+ Volume in drive D is Datos
+ Volume Serial Number is D0EF-5D4D
+
+ Directory of D:\MyProjects\Hominum\voluntarios-hominum\backend
+
+        
+               241 .env
+                65 backend
+                 0 backend.txt
+    <DIR>          config
+             3,837 db_scripts.sql
+    <DIR>          middleware
+    <DIR>          node_modules
+            41,488 package-lock.json
+               310 package.json
+    <DIR>          routes
+               701 server.js
+               7 File(s)         46,642 bytes
+
+ Directory of D:\MyProjects\Hominum\voluntarios-hominum\backend\config
+
+        
+               356 db.js
+               1 File(s)            356 bytes
+
+ Directory of D:\MyProjects\Hominum\voluntarios-hominum\backend\middleware
+
+        
+             1,065 auth.js
+               1 File(s)          1,065 bytes
+
+ Directory of D:\MyProjects\Hominum\voluntarios-hominum\backend\node_modules
+
+        .....many files
+
+ Directory of D:\MyProjects\Hominum\voluntarios-hominum\backend\routes
+
+        
+             1,136 contact.routes.js
+             1,788 eventTypes.routes.js
+             4,755 patient.routes.js
+             5,318 timeEntry.routes.js
+             3,222 volunteer.routes.js
+               5 File(s)         16,219 bytes
+
+     Total Files Listed:
+            2755 File(s)     16,381,528 bytes
+             800 Dir(s)  422,650,179,584 bytes free

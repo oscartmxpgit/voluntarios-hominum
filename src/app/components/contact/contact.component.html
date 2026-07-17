@@ -3,47 +3,47 @@
   <p>Rellena el formulario y nos pondremos en contacto contigo.</p>
 
   <form [formGroup]="contactForm" (ngSubmit)="onSubmit()" class="contact-form">
-
     <div class="form-group">
       <label for="name">Nombre completo *</label>
       <input type="text" id="name" formControlName="name" placeholder="Tu nombre">
-      <small class="error" *ngIf="contactForm.get('name')?.invalid && contactForm.get('name')?.touched">
-        Mínimo 3 caracteres.
-      </small>
+      @if (contactForm.get('name')?.invalid && contactForm.get('name')?.touched) {
+        <small class="error">Mínimo 3 caracteres.</small>
+      }
     </div>
 
     <div class="form-group">
       <label for="email">Correo electrónico *</label>
       <input type="email" id="email" formControlName="email" placeholder="ejemplo@correo.com">
-      <small class="error" *ngIf="contactForm.get('email')?.invalid && contactForm.get('email')?.touched">
-        Introduce un email válido.
-      </small>
+      @if (contactForm.get('email')?.invalid && contactForm.get('email')?.touched) {
+        <small class="error">Introduce un email válido.</small>
+      }
     </div>
 
     <div class="form-group">
       <label for="phone">Teléfono de contacto (opcional)</label>
-      <input type="tel" id="phone" formControlName="phone" placeholder="Ej: 600 123 456" maxlength="12"
-             pattern="[6789][0-9]{8}" title="Introduce un número de teléfono móvil o fijo válido de 9 dígitos">
+      <input type="tel" id="phone" formControlName="phone" placeholder="Ej: 600 123 456" maxlength="12">
     </div>
 
     <div class="form-group">
       <label for="message">Mensaje *</label>
-      <textarea id="message" formControlName="message" rows="5" placeholder="¿Cómo te gustaría colaborar?"></textarea>
-      <small class="error" *ngIf="contactForm.get('message')?.invalid && contactForm.get('message')?.touched">
-        El mensaje debe tener al menos 10 caracteres.
-      </small>
+      <textarea id="message" formControlName="message" rows="5"></textarea>
+      @if (contactForm.get('message')?.invalid && contactForm.get('message')?.touched) {
+        <small class="error">El mensaje debe tener al menos 10 caracteres.</small>
+      }
     </div>
 
-    <!-- Integración reCAPTCHA restaurada -->
     <div class="form-group">
-      <re-captcha formControlName="recaptcha" [siteKey]="siteKey"></re-captcha>
-      <small class="error" *ngIf="contactForm.get('recaptcha')?.invalid && contactForm.get('recaptcha')?.touched">
-        Debes validar que no eres un robot.
-      </small>
+      @if (isCaptchaReady) {
+        <re-captcha 
+          formControlName="recaptcha" 
+          [siteKey]="siteKey" 
+          (resolved)="onCaptchaResolved($event)">
+        </re-captcha>
+      }
     </div>
 
     <button type="submit" [disabled]="contactForm.invalid" class="submit-btn">
-      {{ contactForm.invalid ? 'Completa los campos requeridos' : 'Enviar Mensaje' }}
+      Enviar Mensaje
     </button>
   </form>
 </section>
