@@ -1,14 +1,20 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { esES } from '@clerk/localizations';
+import { BehaviorSubject } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class ClerkService {
   private _clerk: any = null;
+  
+  // Mantenemos el observable para control de estado
+  private _isLoaded = new BehaviorSubject<boolean>(false);
+  public isLoaded$ = this._isLoaded.asObservable();
 
   async init(): Promise<void> {
     if (this._clerk || (window as any).Clerk?.loaded) {
       this._clerk = (window as any).Clerk;
+      this._isLoaded.next(true);
       return;
     }
 
@@ -16,22 +22,27 @@ export class ClerkService {
       const pubKey = environment.clerkPublishableKey;
       if (!pubKey) throw new Error('Clerk Publishable Key is missing.');
 
+      // Restauramos la lógica dinámica para extraer el dominio correcto
       const parts = pubKey.split('_');
       const clerkDomain = atob(parts[2]).slice(0, -1);
 
       await new Promise<void>((resolve, reject) => {
         if ((window as any).Clerk) { resolve(); return; }
+
         const script = document.createElement('script');
         script.setAttribute('data-clerk-publishable-key', pubKey);
         script.async = true;
+        // Restauramos la URL dinámica que apunta al dominio de tu instancia
         script.src = `https://${clerkDomain}/npm/@clerk/clerk-js@5/dist/clerk.browser.js`;
+        script.crossOrigin = 'anonymous';
+
         script.addEventListener('load', () => resolve());
         script.addEventListener('error', (err) => reject(err));
         document.head.appendChild(script);
       });
 
       const globalClerk = (window as any).Clerk;
-      
+
       if (!globalClerk.loaded) {
         await globalClerk.load({
           localization: esES
@@ -39,8 +50,10 @@ export class ClerkService {
       }
 
       this._clerk = globalClerk;
+      this._isLoaded.next(true);
     } catch (err) {
       console.error('Clerk failed to load:', err);
+      this._isLoaded.next(false);
     }
   }
 

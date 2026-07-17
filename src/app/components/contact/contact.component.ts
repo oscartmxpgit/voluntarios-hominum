@@ -20,41 +20,48 @@ export class ContactComponent implements AfterViewInit {
   
   siteKey = environment.recaptcha.siteKey;
   isCaptchaReady = false;
+  
+  // Guardamos el token manualmente, sin depender de FormControl
+  captchaToken: string | null = null; 
 
   contactForm: FormGroup = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(3)]],
     email: ['', [Validators.required, Validators.email]],
     phone: [''],
-    message: ['', [Validators.required, Validators.minLength(10)]],
-    recaptcha: [null] // Inicialmente sin validador
+    message: ['', [Validators.required, Validators.minLength(10)]]
   });
 
   ngAfterViewInit(): void {
-    // Retraso para evitar el error writeValue
     setTimeout(() => {
       this.isCaptchaReady = true;
     }, 0);
   }
 
-  // Se llama cuando el usuario resuelve el captcha
+  // Capturamos el token cuando el usuario completa el captcha
   onCaptchaResolved(token: string | null) {
-    if (token) {
-      this.contactForm.patchValue({ recaptcha: token });
-      this.contactForm.get('recaptcha')?.setValidators([Validators.required]);
-      this.contactForm.get('recaptcha')?.updateValueAndValidity();
-    }
+    this.captchaToken = token;
   }
 
   async onSubmit() {
-    if (this.contactForm.valid) {
+    // Validamos el formulario y comprobamos que el token exista
+    if (this.contactForm.valid && this.captchaToken) {
       try {
-        await this.contactService.sendContactForm(this.contactForm.value);
+        const payload = {
+          ...this.contactForm.value,
+          recaptcha: this.captchaToken
+        };
+        
+        await this.contactService.sendContactForm(payload);
+        
         this.snackBar.open('Mensaje enviado correctamente.', 'Cerrar', { duration: 5000 });
         this.contactForm.reset();
+        this.captchaToken = null; // Reiniciar el token de seguridad
       } catch (error) {
         console.error('Error al enviar el formulario:', error);
         this.snackBar.open('Error al enviar el mensaje.', 'Cerrar', { duration: 5000 });
       }
+    } else if (!this.captchaToken) {
+      this.snackBar.open('Por favor, completa el captcha.', 'Cerrar', { duration: 3000 });
     }
   }
 }

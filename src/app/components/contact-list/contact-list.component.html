@@ -23,7 +23,9 @@
           <button (click)="updateStatus(sub.id, 'contacted')" *ngIf="sub.status === 'pending'">
             Marcar Contactado
           </button>
-          <button (click)="updateStatus(sub.id, 'archived')">Archivar</button>
+          <button (click)="updateStatus(sub.id, 'archived')" *ngIf="sub.status !== 'archived'">
+            Archivar
+          </button>
         </td>
       </tr>
     </tbody>

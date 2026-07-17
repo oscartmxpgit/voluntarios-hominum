@@ -1,17 +1,17 @@
-import { HttpInterceptorFn } from '@angular/common/http';
+import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { from } from 'rxjs';
+import { from, throwError } from 'rxjs';
 import { switchMap, catchError } from 'rxjs/operators';
+import { AuthService } from './services/auth.service';
 import { ClerkService } from './services/clerk.service';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const clerkService = inject(ClerkService);
+  const authService = inject(AuthService);
 
   return from(clerkService.getToken()).pipe(
     switchMap(token => {
-
       if (!token) {
-        console.warn('NO TOKEN FROM CLERK');
         return next(req);
       }
 
@@ -21,9 +21,12 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         }
       }));
     }),
-    catchError(err => {
-      console.error('Interceptor error:', err);
-      return next(req); // ok fallback
+    catchError((err: HttpErrorResponse) => {
+      // Si el backend responde 403, actualizamos el estado globalmente
+      if (err.status === 403) {
+        authService.isForbidden.set(true);
+      }
+      return throwError(() => err);
     })
   );
 };

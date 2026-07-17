@@ -1,6 +1,6 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { ClerkService } from '../services/clerk.service';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
@@ -24,6 +24,7 @@ export class AuthService {
 
   user = signal<AppUser | null>(null);
   private ready = signal(false);
+  isForbidden = signal(false); // Estado para detectar si el usuario no tiene acceso en BD
 
   constructor() {
     this.init();
@@ -47,18 +48,17 @@ export class AuthService {
       const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
 
       const dbUser = await firstValueFrom(
-        // Añadimos is_active a la interfaz de la respuesta HTTP
         this.http.get<{ id: number, email: string, is_coordinator: boolean, is_active: number | boolean }>(
           `${environment.apiUrl}/volunteers/me`, { headers }
         )
       );
 
-      // AJUSTE MÍNIMO: Bloquear si el voluntario no está activo
       if (!dbUser.is_active) {
         throw new Error('401 Unauthorized: El voluntario está inactivo');
       }
 
       const clerkUser = this.clerkService.clerk!.user!;
+      this.isForbidden.set(false); // Acceso concedido
       this.user.set({
         id: dbUser.id,
         email: dbUser.email,
@@ -69,8 +69,14 @@ export class AuthService {
         lastName: clerkUser.lastName,
         imageUrl: clerkUser.imageUrl
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Acceso denegado o usuario no registrado en BD:', error);
+      
+      // Si el error es de tipo Forbidden (403), marcamos el estado
+      if (error instanceof HttpErrorResponse && error.status === 403) {
+        this.isForbidden.set(true);
+      }
+      
       this.user.set(null);
     }
   }
@@ -106,6 +112,7 @@ export class AuthService {
   async logout(): Promise<void> {
     await this.clerkService.clerk?.signOut();
     this.user.set(null);
+    this.isForbidden.set(false); // Resetear estado
     this.ready.set(false);
     this.router.navigate(['/login']);
   }

@@ -34,15 +34,16 @@
 
     <div class="form-group">
       @if (isCaptchaReady) {
+        <!-- Totalmente desacoplado: sin formControlName ni [formControl] -->
         <re-captcha 
-          formControlName="recaptcha" 
           [siteKey]="siteKey" 
           (resolved)="onCaptchaResolved($event)">
         </re-captcha>
       }
     </div>
 
-    <button type="submit" [disabled]="contactForm.invalid" class="submit-btn">
+    <!-- Validamos mediante el form y verificando que la variable captchaToken tenga un valor -->
+    <button type="submit" [disabled]="contactForm.invalid || !captchaToken" class="submit-btn">
       Enviar Mensaje
     </button>
   </form>
