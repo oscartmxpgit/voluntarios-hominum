@@ -72,8 +72,8 @@ export class AuthService {
     } catch (error: any) {
       console.error('Acceso denegado o usuario no registrado en BD:', error);
       
-      // Si el error es de tipo Forbidden (403), marcamos el estado
-      if (error instanceof HttpErrorResponse && error.status === 403) {
+      // Fixed: Handle both 403 Forbidden and 401 Unauthorized status codes
+      if (error instanceof HttpErrorResponse && (error.status === 403 || error.status === 401)) {
         this.isForbidden.set(true);
       }
       
