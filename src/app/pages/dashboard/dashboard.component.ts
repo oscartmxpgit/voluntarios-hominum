@@ -5,6 +5,7 @@ import { FormatDurationPipe } from '../../pipes/duration.pipe';
 import { AuthService } from '../../services/auth.service';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import * as XLSX from 'xlsx';
 
 @Component({
   selector: 'app-dashboard',
@@ -34,7 +35,6 @@ export class DashboardComponent implements OnInit {
   async setViewMode(mode: 'personal' | 'global'): Promise<void> {
     if (this.viewMode === mode) return;
     this.viewMode = mode;
-    // IMPORTANTE: Recargar datos al cambiar de vista
     await this.loadDashboardData();
   }
 
@@ -51,8 +51,74 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  toggleYear(year: YearlyStat): void { year.expanded = !year.expanded; }
-  toggleMonth(month: MonthlyStat, event: Event): void { event.stopPropagation(); month.expanded = !month.expanded; }
+  toggleYear(year: YearlyStat): void { 
+    year.expanded = !year.expanded; 
+  }
+
+  toggleMonth(month: MonthlyStat, event: Event): void { 
+    event.stopPropagation(); 
+    month.expanded = !month.expanded; 
+  }
+
+  exportToExcel(): void {
+    if (!this.data) return;
+
+    const workbook = XLSX.utils.book_new();
+
+    // Sheet 1: KPIs & Current Month Summary
+    const summaryRows: any[][] = [];
+    summaryRows.push([`Reporte de Estadísticas - ${this.viewMode === 'personal' ? 'Mis Estadísticas' : 'Estadísticas Globales'}`]);
+    summaryRows.push([]);
+
+    summaryRows.push(['Métrica KPI', 'Valor']);
+    summaryRows.push(['Horas Este Mes', this.data.kpis.hoursThisMonth || 0]);
+    summaryRows.push(['Total Histórico (Horas)', this.data.kpis.totalHistoricalHours || 0]);
+    summaryRows.push(['Pacientes/Eventos Mes', this.data.kpis.subjectsThisMonth || 0]);
+    summaryRows.push(['Total Visitas Mes', this.data.kpis.visitsThisMonth || 0]);
+    summaryRows.push([]);
+
+    if (this.data.currentMonth) {
+      summaryRows.push([`Distribución Mes Actual (${this.data.currentMonth.monthName})`]);
+      summaryRows.push(['Paciente / Tipo de Evento', 'Registros', 'Horas Dedicadas', 'Porcentaje']);
+      this.data.currentMonth.subjects.forEach(subject => {
+        summaryRows.push([
+          subject.name,
+          subject.visits,
+          subject.hours,
+          `${subject.percentage}%`
+        ]);
+      });
+    }
+
+    const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
+    XLSX.utils.book_append_sheet(workbook, summarySheet, 'Resumen');
+
+    // Sheet 2: Historical Evolution
+    const historyRows: any[][] = [];
+    historyRows.push(['Año', 'Mes', 'Paciente / Tipo de Evento', 'Horas Dedicadas', 'Registros', '% del Mes']);
+
+    this.data.yearlyHistory.forEach(yearStat => {
+      yearStat.months.forEach(month => {
+        month.subjects.forEach(subject => {
+          historyRows.push([
+            yearStat.year,
+            month.monthName,
+            subject.name,
+            subject.hours,
+            subject.visits,
+            `${subject.percentage}%`
+          ]);
+        });
+      });
+    });
+
+    const historySheet = XLSX.utils.aoa_to_sheet(historyRows);
+    XLSX.utils.book_append_sheet(workbook, historySheet, 'Historial');
+
+    // Download .xlsx file
+    const filename = `Estadisticas_${this.viewMode}_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(workbook, filename);
+  }
 
   async exportToPDF(): Promise<void> {
     if (!this.dashboardElement) return;
@@ -76,12 +142,18 @@ export class DashboardComponent implements OnInit {
 
   private expandAllForExport(): void {
     if (!this.data) return;
-    this.data.yearlyHistory.forEach(year => { year.expanded = true; year.months.forEach(month => month.expanded = true); });
+    this.data.yearlyHistory.forEach(year => { 
+      year.expanded = true; 
+      year.months.forEach(month => month.expanded = true); 
+    });
   }
 
   private resetExpansions(): void {
     if (!this.data) return;
     const currentYear = new Date().getFullYear();
-    this.data.yearlyHistory.forEach(year => { year.expanded = year.year === currentYear; year.months.forEach(month => month.expanded = false); });
+    this.data.yearlyHistory.forEach(year => { 
+      year.expanded = year.year === currentYear; 
+      year.months.forEach(month => month.expanded = false); 
+    });
   }
 }

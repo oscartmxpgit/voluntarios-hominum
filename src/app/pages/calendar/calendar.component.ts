@@ -76,20 +76,30 @@ export class CalendarComponent implements OnInit {
     let filtered = this.rawEvents;
 
     if (this.selectedFilter === 'patients') {
-      filtered = this.rawEvents.filter(e => e.patient_name);
+      filtered = this.rawEvents.filter(e => e.patient_name || e.patient_id);
     } else if (this.selectedFilter === 'events') {
-      filtered = this.rawEvents.filter(e => !e.patient_name && e.title);
+      filtered = this.rawEvents.filter(e => !e.patient_name && !e.patient_id && e.title);
     }
 
     this.calendarEvents = filtered.map(e => {
+      const isPatientVisit = !!(e.patient_name || e.patient_id);
       const titleValue = e.patient_name ? e.patient_name : (e.title || 'Evento sin título');
 
+      // ID compuesto único para evitar colisiones entre Visitas y Eventos
+      const uniqueId = isPatientVisit ? `visit-${e.id}` : `event-${e.id}`;
+
       return {
-        id: String(e.id),
+        id: uniqueId,
         title: titleValue,
         start: e.start_datetime,
         end: e.end_datetime,
-        allDay: false
+        allDay: false,
+        extendedProps: {
+          rawId: e.id,
+          isPatientVisit,
+          patient_name: e.patient_name,
+          comments: e.comments
+        }
       };
     });
   }
@@ -109,7 +119,17 @@ export class CalendarComponent implements OnInit {
   }
 
   handleEventClick(info: any): void {
-    const event = this.rawEvents.find(e => String(e.id) === String(info.event.id));
+    const rawId = info.event.extendedProps?.rawId ?? info.event.id;
+    const isPatientVisit = info.event.extendedProps?.isPatientVisit;
+
+    const event = this.rawEvents.find(e => {
+      const isMatchId = String(e.id) === String(rawId);
+      if (!isMatchId) return false;
+
+      const eIsPatient = !!(e.patient_name || e.patient_id);
+      return isPatientVisit !== undefined ? eIsPatient === isPatientVisit : true;
+    });
+
     if (!event) return;
 
     this.selectedEvent = { ...event };
@@ -117,20 +137,50 @@ export class CalendarComponent implements OnInit {
   }
 
   async handleEventChange(info: any): Promise<void> {
-    const existingEvent = this.rawEvents.find(e => String(e.id) === String(info.event.id));
-    if (!existingEvent) { info.revert(); return; }
+    const rawId = info.event.extendedProps?.rawId ?? info.event.id;
+    const isPatientVisit = info.event.extendedProps?.isPatientVisit;
+
+    // 1. Localizar el evento original sin ambigüedad de ID
+    const existingEvent = this.rawEvents.find(e => {
+      const isMatchId = String(e.id) === String(rawId);
+      if (!isMatchId) return false;
+
+      const eIsPatient = !!(e.patient_name || e.patient_id);
+      return isPatientVisit !== undefined ? eIsPatient === isPatientVisit : true;
+    });
+
+    if (!existingEvent) {
+      info.revert();
+      return;
+    }
 
     try {
+      const newStart = new Date(info.event.start);
+
+      // 2. Mantener la duración original si info.event.end viene nulo (muy habitual en vista mes)
+      let newEnd: Date;
+      if (info.event.end) {
+        newEnd = new Date(info.event.end);
+      } else if (existingEvent.start_datetime && existingEvent.end_datetime) {
+        const origStart = new Date(existingEvent.start_datetime).getTime();
+        const origEnd = new Date(existingEvent.end_datetime).getTime();
+        const duration = Math.max(origEnd - origStart, 3600000); // Mínimo 1 hora
+        newEnd = new Date(newStart.getTime() + duration);
+      } else {
+        newEnd = new Date(newStart.getTime() + 3600000);
+      }
+
+      // 3. Crear el objeto a actualizar conservando patient_name y formateando a ISO
       const updatedEvent = {
         ...existingEvent,
-        start_datetime: info.event.start,
-        end_datetime: info.event.end || info.event.start
+        start_datetime: newStart.toISOString(),
+        end_datetime: newEnd.toISOString()
       };
 
-      await this.calendarService.updateEvent(info.event.id, updatedEvent);
+      await this.calendarService.updateEvent(rawId, updatedEvent);
       await this.loadEvents();
     } catch (e) {
-      console.error(e);
+      console.error('Error actualizando evento tras drag&drop:', e);
       info.revert();
     }
   }

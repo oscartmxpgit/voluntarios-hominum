@@ -52,3 +52,4 @@ Thumbs.db
 # Ignorar logs u otros archivos temporales del backend
 /backend/npm-debug.log
 .env
+voluntarios-pacientes-info.md

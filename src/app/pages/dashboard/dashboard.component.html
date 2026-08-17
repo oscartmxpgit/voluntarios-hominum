@@ -22,6 +22,11 @@
         </button>
       </div>
       
+      <button class="btn btn-excel export-btn" (click)="exportToExcel()" [disabled]="isExporting || loading">
+        <span class="icon">📊</span> 
+        Exportar a Excel
+      </button>
+
       <button class="btn btn-primary export-btn" (click)="exportToPDF()" [disabled]="isExporting || loading">
         <span class="icon">📄</span> 
         {{ isExporting ? 'Generando PDF...' : 'Exportar a PDF' }}

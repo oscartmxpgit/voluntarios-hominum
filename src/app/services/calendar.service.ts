@@ -78,16 +78,16 @@ export class CalendarService {
   // EVENTS
   // =========================
 
-async getGeneralEventTypes(): Promise<any[]> {
-  try {
-    return await firstValueFrom(
-      this.http.get<any[]>(`${environment.apiUrl}/general-events`)
-    );
-  } catch (error) {
-    console.error('Error fetching general event types:', error);
-    return [];
+  async getGeneralEventTypes(): Promise<any[]> {
+    try {
+      return await firstValueFrom(
+        this.http.get<any[]>(`${environment.apiUrl}/general-events`)
+      );
+    } catch (error) {
+      console.error('Error fetching general event types:', error);
+      return [];
+    }
   }
-}
 
   // =========================
   // MAP EVENT TO API
@@ -101,14 +101,28 @@ async getGeneralEventTypes(): Promise<any[]> {
       throw new Error('Fechas inválidas en el evento');
     }
 
-    // Estructura que espera el backend
-    return {
+    // Spread the original event to preserve unmapped fields like volunteer_id
+    const payload: any = {
+      ...event,
       start_datetime: this.toMySqlDate(start),
       end_datetime: this.toMySqlDate(end),
       comments: event.comments ?? '',
-      patient_id: event.patient_id ? Number(event.patient_id) : null,
-      title: event.title ?? null // Añadido para eventos generales
+      title: event.title ?? null
     };
+
+    // CRITICAL FIX: Protect the patient relationship from being overwritten to NULL
+    if (event.patient_id) {
+      payload.patient_id = Number(event.patient_id);
+    } else if (event.patient_name) {
+      // It IS a patient visit, but the frontend didn't have the patient_id (likely missing in GET).
+      // We delete the key from the payload so the backend ignores it instead of setting it to NULL.
+      delete payload.patient_id;
+    } else {
+      // It is a true generic event (no patient_id, no patient_name)
+      payload.patient_id = null;
+    }
+
+    return payload;
   }
 
   // =========================
