@@ -300,6 +300,7 @@
 
     width: 300px;
     height: 100vh;
+    height: 100dvh; /* Dynamic Viewport Height fix to prevent scrolling for footer elements */
 
     background: #ffffff;
 
@@ -384,6 +385,8 @@
     padding: 14px;
 
     gap: 6px;
+    overflow-y: auto; /* Ensures links scroll if they exceed available height */
+    flex: 1;
 }
 
 .drawer-links a {
