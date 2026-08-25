@@ -15,4 +15,4 @@ app.use('/api/contact-submissions', require('./routes/contact.routes'));
 app.use('/api/patients', require('./routes/patient.routes'));
 app.use('/api/general-events', require('./routes/eventTypes.routes'));
 
-app.listen(3000, () => console.log('Servidor en puerto 3000'));
+app.listen(3003, () => console.log('Servidor en puerto 3003'));

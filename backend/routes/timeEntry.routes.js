@@ -13,8 +13,10 @@ router.get('/', requireAuth, async (req, res) => {
       SELECT t.*, 
              p.name AS patient_name, 
              p.id AS patient_id,
-             g.title AS title
+             g.title AS title,
+             v.email AS volunteer_name
       FROM time_entries t
+      LEFT JOIN volunteers v ON t.volunteer_id = v.id
       LEFT JOIN patient_time_entries pte ON t.id = pte.time_entry_id
       LEFT JOIN patients p ON p.id = pte.patient_id
       LEFT JOIN general_time_entries g ON t.id = g.time_entry_id
@@ -22,10 +24,8 @@ router.get('/', requireAuth, async (req, res) => {
 
     const params = [];
     
-    const esCoordinador = isCoordinator(req);
-    const quiereGlobal = req.query.scope === 'all';
-
-    if (!esCoordinador || !quiereGlobal) {
+    // Coordinators see all entries by default; regular volunteers only see their own
+    if (!isCoordinator(req)) {
       sql += ` WHERE t.volunteer_id = ?`;
       params.push(req.user.id);
     }
