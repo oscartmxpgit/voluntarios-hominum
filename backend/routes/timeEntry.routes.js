@@ -14,7 +14,8 @@ router.get('/', requireAuth, async (req, res) => {
              p.name AS patient_name, 
              p.id AS patient_id,
              g.title AS title,
-             v.email AS volunteer_name
+             v.full_name AS volunteer_name,
+             v.email AS volunteer_email
       FROM time_entries t
       LEFT JOIN volunteers v ON t.volunteer_id = v.id
       LEFT JOIN patient_time_entries pte ON t.id = pte.time_entry_id

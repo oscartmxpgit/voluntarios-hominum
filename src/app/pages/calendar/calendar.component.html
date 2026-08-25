@@ -1,43 +1,73 @@
 <div class="calendar-container">
   
   <div class="filter-container">
-    <label class="filter-option">
-      <input 
-        type="radio" 
-        name="eventType" 
-        value="all" 
-        [checked]="selectedFilter === 'all'"
-        (change)="onFilterChange('all')">
-      <span>Todos</span>
-    </label>
+    <div class="filter-group">
+      <label class="filter-option">
+        <input 
+          type="radio" 
+          name="eventType" 
+          value="all" 
+          [checked]="selectedFilter === 'all'"
+          (change)="onFilterChange('all')">
+        <span>Todos</span>
+      </label>
 
-    <label class="filter-option">
-      <input 
-        type="radio" 
-        name="eventType" 
-        value="patients" 
-        [checked]="selectedFilter === 'patients'"
-        (change)="onFilterChange('patients')">
-      <span>Visitas</span>
-    </label>
+      <label class="filter-option">
+        <input 
+          type="radio" 
+          name="eventType" 
+          value="patients" 
+          [checked]="selectedFilter === 'patients'"
+          (change)="onFilterChange('patients')">
+        <span>Visitas</span>
+      </label>
 
-    <label class="filter-option">
-      <input 
-        type="radio" 
-        name="eventType" 
-        value="events" 
-        [checked]="selectedFilter === 'events'"
-        (change)="onFilterChange('events')">
-      <span>Eventos</span>
-    </label>
+      <label class="filter-option">
+        <input 
+          type="radio" 
+          name="eventType" 
+          value="events" 
+          [checked]="selectedFilter === 'events'"
+          (change)="onFilterChange('events')">
+        <span>Eventos</span>
+      </label>
+    </div>
+
+    @if (isCoordinator) {
+      <div class="filter-group coordinator-controls">
+        <span class="filter-separator"></span>
+        <label class="filter-option">
+          <input 
+            type="radio" 
+            name="displayMode" 
+            value="volunteer" 
+            [checked]="displayMode === 'volunteer'"
+            (change)="onDisplayModeChange('volunteer')">
+          <span>Voluntario</span>
+        </label>
+
+        <label class="filter-option">
+          <input 
+            type="radio" 
+            name="displayMode" 
+            value="patient" 
+            [checked]="displayMode === 'patient'"
+            (change)="onDisplayModeChange('patient')">
+          <span>Paciente</span>
+        </label>
+      </div>
+    }
   </div>
 
   <full-calendar [options]="calendarOptions" [events]="calendarEvents"></full-calendar>
 
   @if (isFormVisible) {
-  <div class="modal-overlay">
-    <app-event-form [eventData]="selectedEvent" (close)="closeForm()" (delete)="handleDeleteEvent($event)">
-    </app-event-form>
-  </div>
+    <div class="modal-overlay">
+      <app-event-form 
+        [eventData]="selectedEvent" 
+        (close)="closeForm()" 
+        (delete)="handleDeleteEvent($event)">
+      </app-event-form>
+    </div>
   }
 </div>

@@ -24,7 +24,7 @@
           name="assigned_volunteer_id">
           <option [ngValue]="null">Sin asignar voluntario</option>
           @for (vol of volunteers; track vol.id) {
-          <option [ngValue]="vol.id">{{ vol.email }}</option>
+          <option [ngValue]="vol.id">{{ vol.full_name || vol.email }}</option>
           }
         </select>
       </div>
@@ -62,8 +62,8 @@
         <tr>
           <td class="patient-name">{{ patient.name }}</td>
           <td>
-            @if (patient.volunteer_email) {
-            <span class="volunteer-badge">{{ patient.volunteer_email }}</span>
+            @if (patient.volunteer_name) {
+            <span class="volunteer-badge">{{ patient.volunteer_name }}</span>
             } @else {
             <span class="unassigned-text">Sin voluntario enlazado</span>
             }

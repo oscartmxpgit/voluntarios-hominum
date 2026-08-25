@@ -15,7 +15,8 @@ router.get('/', requireAuth, async (req, res) => {
     const query = `
       SELECT
         p.*,
-        u.email AS volunteer_email
+        u.email AS volunteer_email,
+        u.full_name AS volunteer_name
       FROM patients p
       LEFT JOIN volunteers u
         ON p.assigned_volunteer_id = u.id

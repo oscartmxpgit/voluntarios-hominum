@@ -7,12 +7,13 @@ export interface Patient {
   id?: number;
   name: string;
   assigned_volunteer_id: number | null;
-  volunteer_email?: string;
+  volunteer_name?: string;
   status?: 'active' | 'inactive';
 }
 
 export interface Volunteer {
   id: number;
+  full_name?: string;
   email: string;
 }
 

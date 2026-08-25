@@ -35,7 +35,7 @@ router.get('/', requireAuth, async (req, res) => {
 
   try {
     const [rows] = await db.execute(
-      'SELECT id, email, is_coordinator, is_active FROM volunteers ORDER BY email ASC'
+      'SELECT id, email, full_name, is_coordinator, is_active FROM volunteers ORDER BY full_name ASC, email ASC'
     );
     res.json(rows);
   } catch (err) {
@@ -52,7 +52,7 @@ router.get('/volunteers', requireAuth, async (req, res) => {
 
   try {
     const [rows] = await db.execute(
-      'SELECT id, email, is_active FROM volunteers WHERE is_active = 1 ORDER BY email ASC'
+      'SELECT id, email, full_name, is_active FROM volunteers WHERE is_active = 1 ORDER BY full_name ASC, email ASC'
     );
     res.json(rows);
   } catch (err) {

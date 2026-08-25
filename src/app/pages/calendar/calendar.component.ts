@@ -1,4 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { FullCalendarModule } from '@fullcalendar/angular';
 import { CalendarOptions } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -12,7 +14,7 @@ import { AuthService } from '../../services/auth.service';
 @Component({
   selector: 'app-calendar',
   standalone: true,
-  imports: [FullCalendarModule, EventFormComponent],
+  imports: [CommonModule, FormsModule, FullCalendarModule, EventFormComponent],
   templateUrl: './calendar.component.html',
   styleUrls: ['./calendar.component.css']
 })
@@ -27,6 +29,11 @@ export class CalendarComponent implements OnInit {
 
   // Estado del filtro: 'all' | 'patients' | 'events'
   selectedFilter: string = 'all';
+
+  // Modo de visualización por defecto: 'volunteer'
+  displayMode: 'patient' | 'volunteer' = 'volunteer';
+
+  isCoordinator = false;
 
   calendarEvents: any[] = [];
 
@@ -53,6 +60,8 @@ export class CalendarComponent implements OnInit {
   };
 
   async ngOnInit(): Promise<void> {
+    const user = this.authService.user();
+    this.isCoordinator = !!user?.isCoordinator;
     await this.loadEvents();
   }
 
@@ -72,6 +81,11 @@ export class CalendarComponent implements OnInit {
     this.applyFilter();
   }
 
+  onDisplayModeChange(mode: 'patient' | 'volunteer'): void {
+    this.displayMode = mode;
+    this.applyFilter();
+  }
+
   applyFilter(): void {
     let filtered = this.rawEvents;
 
@@ -83,9 +97,26 @@ export class CalendarComponent implements OnInit {
 
     this.calendarEvents = filtered.map(e => {
       const isPatientVisit = !!(e.patient_name || e.patient_id);
-      const titleValue = e.patient_name ? e.patient_name : (e.title || 'Evento sin título');
 
-      // ID compuesto único para evitar colisiones entre Visitas y Eventos
+      let titleValue = 'Evento sin título';
+
+      if (isPatientVisit) {
+        if (this.isCoordinator && this.displayMode === 'volunteer') {
+          // Construir el nombre del voluntario priorizando el nombre completo sobre el email
+          const formattedVolunteerName = e.full_name
+            || e.volunteer_name
+            || e.volunteer_email
+            || e.email
+            || 'Voluntario no asignado';
+
+          titleValue = formattedVolunteerName;
+        } else {
+          titleValue = e.patient_name || 'Paciente no asignado';
+        }
+      } else {
+        titleValue = e.title || 'Evento sin título';
+      }
+
       const uniqueId = isPatientVisit ? `visit-${e.id}` : `event-${e.id}`;
 
       return {
@@ -98,6 +129,7 @@ export class CalendarComponent implements OnInit {
           rawId: e.id,
           isPatientVisit,
           patient_name: e.patient_name,
+          volunteer_name: e.volunteer_name,
           comments: e.comments
         }
       };
@@ -140,7 +172,6 @@ export class CalendarComponent implements OnInit {
     const rawId = info.event.extendedProps?.rawId ?? info.event.id;
     const isPatientVisit = info.event.extendedProps?.isPatientVisit;
 
-    // 1. Localizar el evento original sin ambigüedad de ID
     const existingEvent = this.rawEvents.find(e => {
       const isMatchId = String(e.id) === String(rawId);
       if (!isMatchId) return false;
@@ -157,20 +188,18 @@ export class CalendarComponent implements OnInit {
     try {
       const newStart = new Date(info.event.start);
 
-      // 2. Mantener la duración original si info.event.end viene nulo (muy habitual en vista mes)
       let newEnd: Date;
       if (info.event.end) {
         newEnd = new Date(info.event.end);
       } else if (existingEvent.start_datetime && existingEvent.end_datetime) {
         const origStart = new Date(existingEvent.start_datetime).getTime();
         const origEnd = new Date(existingEvent.end_datetime).getTime();
-        const duration = Math.max(origEnd - origStart, 3600000); // Mínimo 1 hora
+        const duration = Math.max(origEnd - origStart, 3600000);
         newEnd = new Date(newStart.getTime() + duration);
       } else {
         newEnd = new Date(newStart.getTime() + 3600000);
       }
 
-      // 3. Crear el objeto a actualizar conservando patient_name y formateando a ISO
       const updatedEvent = {
         ...existingEvent,
         start_datetime: newStart.toISOString(),
