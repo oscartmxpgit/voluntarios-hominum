@@ -15,12 +15,24 @@ router.get('/', requireAuth, async (req, res) => {
              p.id AS patient_id,
              g.title AS title,
              v.full_name AS volunteer_name,
-             v.email AS volunteer_email
+             v.email AS volunteer_email,
+             tc.comment AS comment,
+             tc.comment_author_name AS comment_author_name
       FROM time_entries t
       LEFT JOIN volunteers v ON t.volunteer_id = v.id
       LEFT JOIN patient_time_entries pte ON t.id = pte.time_entry_id
       LEFT JOIN patients p ON p.id = pte.patient_id
       LEFT JOIN general_time_entries g ON t.id = g.time_entry_id
+      LEFT JOIN (
+        SELECT c.time_entry_id,
+               c.comment,
+               cv.full_name AS comment_author_name
+        FROM time_entry_comments c
+        LEFT JOIN volunteers cv ON c.volunteer_id = cv.id
+        WHERE c.id IN (
+          SELECT MAX(id) FROM time_entry_comments GROUP BY time_entry_id
+        )
+      ) tc ON t.id = tc.time_entry_id
     `;
 
     const params = [];
@@ -45,18 +57,26 @@ router.get('/', requireAuth, async (req, res) => {
 // CREAR EVENTO (Transaccional)
 // =======================================
 router.post('/', requireAuth, async (req, res) => {
-  const { start_datetime, end_datetime, comments, patient_id, title } = req.body;
+  const { start_datetime, end_datetime, comment, comments, patient_id, title } = req.body;
+  const commentText = comment ?? comments;
   const connection = await db.getConnection();
 
   try {
     await connection.beginTransaction();
 
     const [result] = await connection.execute(
-      `INSERT INTO time_entries (volunteer_id, start_datetime, end_datetime, comments) VALUES (?, ?, ?, ?)`,
-      [req.user.id, start_datetime, end_datetime, comments ?? null]
+      `INSERT INTO time_entries (volunteer_id, start_datetime, end_datetime) VALUES (?, ?, ?)`,
+      [req.user.id, start_datetime, end_datetime]
     );
 
     const timeEntryId = result.insertId;
+
+    if (commentText && commentText.trim() !== '') {
+      await connection.execute(
+        `INSERT INTO time_entry_comments (time_entry_id, volunteer_id, comment) VALUES (?, ?, ?)`,
+        [timeEntryId, req.user.id, commentText]
+      );
+    }
 
     if (patient_id) {
       await connection.execute(
@@ -85,7 +105,8 @@ router.post('/', requireAuth, async (req, res) => {
 // ACTUALIZAR EVENTO
 // =======================================
 router.put('/:id', requireAuth, async (req, res) => {
-  const { start_datetime, end_datetime, comments, patient_id, title } = req.body;
+  const { start_datetime, end_datetime, comment, comments, patient_id, title } = req.body;
+  const commentText = comment ?? comments;
   const entryId = req.params.id;
   const connection = await db.getConnection();
 
@@ -109,24 +130,32 @@ router.put('/:id', requireAuth, async (req, res) => {
 
     // 2. Actualizar tabla base
     await connection.execute(
-      `UPDATE time_entries SET start_datetime = ?, end_datetime = ?, comments = ? WHERE id = ?`,
-      [start_datetime, end_datetime, comments ?? null, entryId]
+      `UPDATE time_entries SET start_datetime = ?, end_datetime = ? WHERE id = ?`,
+      [start_datetime, end_datetime, entryId]
     );
 
-    // 3. Inspeccionar relaciones existentes antes de borrar, por si el frontend no mandó el patient_id explícito
+    // 3. Actualizar o reinsertar el comentario en time_entry_comments
+    await connection.execute(`DELETE FROM time_entry_comments WHERE time_entry_id = ?`, [entryId]);
+    if (commentText && commentText.trim() !== '') {
+      await connection.execute(
+        `INSERT INTO time_entry_comments (time_entry_id, volunteer_id, comment) VALUES (?, ?, ?)`,
+        [entryId, req.user.id, commentText]
+      );
+    }
+
+    // 4. Inspeccionar relaciones existentes antes de borrar
     const [oldPatientRows] = await connection.execute(
       `SELECT patient_id FROM patient_time_entries WHERE time_entry_id = ?`,
       [entryId]
     );
     
-    // Si el body no trae patient_id pero la base de datos ya lo tenía asociado, lo conservamos
     const resolvedPatientId = patient_id || (oldPatientRows.length > 0 ? oldPatientRows[0].patient_id : null);
 
-    // 4. Limpiar tablas específicas
+    // 5. Limpiar tablas específicas
     await connection.execute(`DELETE FROM patient_time_entries WHERE time_entry_id = ?`, [entryId]);
     await connection.execute(`DELETE FROM general_time_entries WHERE time_entry_id = ?`, [entryId]);
 
-    // 5. Reinsertar en la tabla que corresponda de forma robusta
+    // 6. Reinsertar en la tabla correspondiente
     if (resolvedPatientId) {
       await connection.execute(
         `INSERT INTO patient_time_entries (time_entry_id, patient_id) VALUES (?, ?)`,

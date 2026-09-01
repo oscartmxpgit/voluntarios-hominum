@@ -1,4 +1,5 @@
 import { Component, EventEmitter, HostListener, Input, Output, OnInit, OnChanges, SimpleChanges, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CalendarService } from '../../services/calendar.service';
 import { AuthService } from '../../services/auth.service';
@@ -6,7 +7,7 @@ import { AuthService } from '../../services/auth.service';
 @Component({
   selector: 'app-event-form',
   standalone: true,
-  imports: [FormsModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './event-form.component.html',
   styleUrls: ['./event-form.component.css']
 })
@@ -18,6 +19,10 @@ export class EventFormComponent implements OnInit, OnChanges {
   eventTypes: any[] = [];
   eventType: 'patient' | 'general' = 'patient';
   formModel: any = {};
+
+  activeTab: 'details' | 'comments' = 'details';
+  newCommentText = '';
+  commentsList: any[] = [];
 
   @Input() eventData: any = {};
   @Output() close = new EventEmitter<void>();
@@ -51,13 +56,93 @@ export class EventFormComponent implements OnInit, OnChanges {
         title: safeValue.title ?? null,
         start_datetime: safeValue.start_datetime ? this.toLocalInput(safeValue.start_datetime) : '',
         end_datetime: safeValue.end_datetime ? this.toLocalInput(safeValue.end_datetime) : '',
-        comments: safeValue.comments ?? ''
+        comment: ''
       };
       
       this.eventType = this.formModel.patient_id ? 'patient' : (this.formModel.title ? 'general' : 'patient');
-      
+      this.newCommentText = '';
+
+      this.processComments(safeValue);
       this.checkAndApplyDefaults();
     }
+  }
+
+  setTab(tab: 'details' | 'comments'): void {
+    this.activeTab = tab;
+  }
+
+  private processComments(rawEventData: any): void {
+    let rawComments: any[] = [];
+
+    if (Array.isArray(rawEventData.comments)) {
+      rawComments = [...rawEventData.comments];
+    } else if (rawEventData.comment || rawEventData.comments) {
+      const textComment = rawEventData.comment ?? rawEventData.comments;
+      if (typeof textComment === 'string' && textComment.trim() !== '') {
+        rawComments = [{
+          comment: textComment,
+          comment_author_name: rawEventData.comment_author_name || rawEventData.comment_author || 'Anónimo',
+          created_at: rawEventData.created_at || rawEventData.start_datetime || new Date()
+        }];
+      }
+    }
+
+    this.commentsList = rawComments
+      .map(c => {
+        const authorName = 
+          c.comment_author_name || 
+          c.author_name || 
+          c.volunteer?.name || 
+          c.volunteers?.name || 
+          c.comment_author || 
+          c.volunteer_name || 
+          'Anónimo';
+
+        return {
+          ...c,
+          comment_author_name: authorName,
+          author_name: authorName
+        };
+      })
+      .sort((a, b) => {
+        const dateA = new Date(a.created_at || a.date || 0).getTime();
+        const dateB = new Date(b.created_at || b.date || 0).getTime();
+        return dateB - dateA;
+      });
+  }
+
+  addComment(): void {
+    if (!this.newCommentText || this.newCommentText.trim() === '') {
+      return;
+    }
+
+    const currentUser = this.authService.user();
+    const authorName = currentUser?.name || currentUser?.name || currentUser?.email || 'Anónimo';
+
+    const newCommentObj = {
+      comment: this.newCommentText.trim(),
+      comment_author_name: authorName,
+      author_name: authorName,
+      created_at: new Date()
+    };
+
+    this.commentsList = [newCommentObj, ...this.commentsList];
+    this.formModel.comment = this.newCommentText.trim();
+    this.newCommentText = '';
+  }
+
+  formatDateEs(dateVal: any): string {
+    if (!dateVal) return '';
+    const date = new Date(dateVal);
+    if (isNaN(date.getTime())) return '';
+
+    return new Intl.DateTimeFormat('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
   }
 
   private checkAndApplyDefaults(): void {
@@ -69,7 +154,7 @@ export class EventFormComponent implements OnInit, OnChanges {
         this.onPatientChange();
       } else if (this.eventType === 'general') {
         if (this.eventTypes.length === 1 && !this.formModel.title) {
-          this.formModel.title = this.eventTypes[0].title;
+          this.formModel.title = this.eventTypes[0].name;
         }
         this.onEventTypeChange();
       }
@@ -86,17 +171,14 @@ export class EventFormComponent implements OnInit, OnChanges {
   }
 
   onEventTypeChange() {
-    // Buscar el tipo de evento seleccionado en el catálogo de BD
-    const selectedType = this.eventTypes.find(type => type.title === this.formModel.title);
+    const selectedType = this.eventTypes.find(type => type.name === this.formModel.title);
     
     if (selectedType && selectedType.start_datetime) {
-      // Sobrescribir con la fecha y hora provenientes de la base de datos
       this.formModel.start_datetime = this.toLocalInput(selectedType.start_datetime);
       if (selectedType.end_datetime) {
         this.formModel.end_datetime = this.toLocalInput(selectedType.end_datetime);
       }
     } else {
-      // Fallback si no tiene horas definidas
       this.initializeDefaultTimes();
     }
   }
@@ -143,11 +225,16 @@ export class EventFormComponent implements OnInit, OnChanges {
       if (this.eventType === 'patient' && !this.formModel.patient_id) throw new Error('Seleccione un paciente');
       if (this.eventType === 'general' && !this.formModel.title) throw new Error('Seleccione un tipo de evento');
 
+      if (this.newCommentText && this.newCommentText.trim() !== '') {
+        this.addComment();
+      }
+
       const payload = {
         ...this.formModel,
         type: this.eventType,
         start_datetime: new Date(this.formModel.start_datetime),
-        end_datetime: new Date(this.formModel.end_datetime)
+        end_datetime: new Date(this.formModel.end_datetime),
+        comment: this.formModel.comment
       };
 
       if (payload.id) await this.calendarService.updateEvent(payload.id, payload);

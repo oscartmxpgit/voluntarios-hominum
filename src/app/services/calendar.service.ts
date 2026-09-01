@@ -105,9 +105,11 @@ export class CalendarService {
       ...event,
       start_datetime: this.toMySqlDate(start),
       end_datetime: this.toMySqlDate(end),
-      comments: event.comments ?? '',
+      comment: event.comment ?? event.comments ?? '',
       title: event.title ?? null
     };
+
+    delete payload.comments;
 
     if (event.patient_id) {
       payload.patient_id = Number(event.patient_id);

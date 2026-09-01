@@ -10,6 +10,7 @@ import interactionPlugin from '@fullcalendar/interaction';
 import { CalendarService } from '../../services/calendar.service';
 import { EventFormComponent } from '../../components/event-form/event-form.component';
 import { AuthService } from '../../services/auth.service';
+import { CalendarEvent } from '../../models/calendar-event';
 
 @Component({
   selector: 'app-calendar',
@@ -25,7 +26,7 @@ export class CalendarComponent implements OnInit {
 
   isFormVisible = false;
   selectedEvent: any = null;
-  private rawEvents: any[] = [];
+  private rawEvents: CalendarEvent[] = [];
 
   // Estado del filtro: 'all' | 'patients' | 'events'
   selectedFilter: string = 'all';
@@ -102,7 +103,6 @@ export class CalendarComponent implements OnInit {
 
       if (isPatientVisit) {
         if (this.isCoordinator && this.displayMode === 'volunteer') {
-          // Construir el nombre del voluntario priorizando el nombre completo sobre el email
           const formattedVolunteerName = e.full_name
             || e.volunteer_name
             || e.volunteer_email
@@ -130,7 +130,7 @@ export class CalendarComponent implements OnInit {
           isPatientVisit,
           patient_name: e.patient_name,
           volunteer_name: e.volunteer_name,
-          comments: e.comments
+          comment: e.comment ?? e.comments
         }
       };
     });
@@ -145,7 +145,7 @@ export class CalendarComponent implements OnInit {
       start_datetime: start,
       end_datetime: end,
       patient_name: '',
-      comments: ''
+      comment: ''
     };
     this.isFormVisible = true;
   }

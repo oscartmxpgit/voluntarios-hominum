@@ -2,52 +2,118 @@
   <div class="modal-content">
     <h3>{{ formModel.id ? 'Editar Evento' : 'Nuevo Evento' }}</h3>
 
-    <div class="form-group-radio">
-      <label><input type="radio" [(ngModel)]="eventType" value="patient" (change)="onTypeChange()"> Paciente</label>
-      <label><input type="radio" [(ngModel)]="eventType" value="general" (change)="onTypeChange()"> Evento</label>
+    <!-- Tabs Navigation -->
+    <div class="tabs-nav">
+      <button 
+        type="button" 
+        class="tab-btn" 
+        [class.active]="activeTab === 'details'" 
+        (click)="setTab('details')">
+        Detalles
+      </button>
+      <button 
+        type="button" 
+        class="tab-btn" 
+        [class.active]="activeTab === 'comments'" 
+        (click)="setTab('comments')">
+        Observaciones
+        @if (commentsList.length > 0) {
+          <span class="badge">{{ commentsList.length }}</span>
+        }
+      </button>
     </div>
 
-    @if (eventType === 'patient') {
-    <div class="form-group">
-      <label>Paciente (*)</label>
-      <select [(ngModel)]="formModel.patient_id" (change)="onPatientChange()" required>
-        <option [ngValue]="null" disabled>Seleccione un paciente</option>
-        @for (patient of patients; track patient.id) {
-        <option [ngValue]="patient.id">{{ patient.name }}</option>
+    <!-- Tab 1: Event Details -->
+    @if (activeTab === 'details') {
+      <div class="tab-body">
+        <div class="form-group-radio">
+          <label><input type="radio" [(ngModel)]="eventType" value="patient" (change)="onTypeChange()"> Paciente</label>
+          <label><input type="radio" [(ngModel)]="eventType" value="general" (change)="onTypeChange()"> Evento</label>
+        </div>
+
+        @if (eventType === 'patient') {
+          <div class="form-group">
+            <label>Paciente (*)</label>
+            <select [(ngModel)]="formModel.patient_id" (change)="onPatientChange()" required>
+              <option [ngValue]="null" disabled>Seleccione un paciente</option>
+              @for (patient of patients; track patient.id) {
+                <option [ngValue]="patient.id">{{ patient.name }}</option>
+              }
+            </select>
+          </div>
+        } @else {
+          <div class="form-group">
+            <label>Tipo de Evento (*)</label>
+            <select [(ngModel)]="formModel.title" (change)="onEventTypeChange()" required>
+              <option [ngValue]="null" disabled>Seleccione una categoría</option>
+              @for (type of eventTypes; track type.id) {
+                <option [ngValue]="type.name">{{ type.name }}</option>
+              }
+            </select>
+          </div>
         }
-      </select>
-    </div>
-    } @else {
-    <div class="form-group">
-      <label>Tipo de Evento (*)</label>
-      <select [(ngModel)]="formModel.title" (change)="onEventTypeChange()" required>
-        <option [ngValue]="null" disabled>Seleccione una categoría</option>
-        @for (type of eventTypes; track type.id) {
-        <option [ngValue]="type.title">{{ type.title }}</option>
-        }
-      </select>
-    </div>
+
+        <div class="form-group">
+          <label>Inicio</label>
+          <input type="datetime-local" [(ngModel)]="formModel.start_datetime" (change)="onStartChange()" />
+        </div>
+
+        <div class="form-group">
+          <label>Fin</label>
+          <input type="datetime-local" [(ngModel)]="formModel.end_datetime" />
+        </div>
+      </div>
     }
 
-    <div class="form-group">
-      <label>Inicio</label>
-      <input type="datetime-local" [(ngModel)]="formModel.start_datetime" (change)="onStartChange()" />
-    </div>
+    <!-- Tab 2: Comments / Observaciones -->
+    @if (activeTab === 'comments') {
+      <div class="tab-body">
+        <!-- New Comment Input -->
+        <div class="add-comment-section">
+          <label>Añadir nueva observación</label>
+          <textarea 
+            [(ngModel)]="newCommentText" 
+            placeholder="Escriba un comentario o nota aquí...">
+          </textarea>
+          <div class="add-comment-actions">
+            <button type="button" class="btn-add-comment" (click)="addComment()">
+              + Añadir comentario
+            </button>
+          </div>
+        </div>
 
-    <div class="form-group">
-      <label>Fin</label>
-      <input type="datetime-local" [(ngModel)]="formModel.end_datetime" />
-    </div>
+        <!-- All Comments Container -->
+        <div class="comments-history">
+          @if (commentsList.length > 0) {
+            <div class="comments-scroll-list">
+              @for (item of commentsList; track item.id || $index) {
+                <div class="comment-card">
+                  <div class="comment-header">
+                    <span class="comment-author">
+                      👤 {{ item.comment_author_name || item.author_name || item.author || 'Anónimo' }}
+                    </span>
+                    <span class="comment-date">
+                      🕒 {{ formatDateEs(item.created_at || item.date) }}
+                    </span>
+                  </div>
+                  <div class="comment-body">
+                    {{ item.comment || item.text }}
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="no-comments">No hay observaciones registradas aún.</p>
+          }
+        </div>
+      </div>
+    }
 
-    <div class="form-group">
-      <label>Observaciones</label>
-      <textarea [(ngModel)]="formModel.comments" placeholder="Notas adicionales..."></textarea>
-    </div>
-
+    <!-- Global Actions -->
     <div class="actions">
       <button type="button" class="btn-save" (click)="save()">Guardar</button>
       @if (formModel.id) {
-      <button type="button" class="btn-delete" (click)="onDelete()">Eliminar</button>
+        <button type="button" class="btn-delete" (click)="onDelete()">Eliminar</button>
       }
       <button type="button" class="btn-cancel" (click)="close.emit()">Cancelar</button>
     </div>
