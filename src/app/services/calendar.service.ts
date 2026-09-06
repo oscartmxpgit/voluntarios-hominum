@@ -62,6 +62,12 @@ export class CalendarService {
   // PATIENTS
   // =========================
 
+  async getAllPatients(): Promise<any[]> {
+    return await firstValueFrom(
+      this.http.get<any[]>(`${environment.apiUrl}/patients`)
+    );
+  }
+
   async getAvailablePatients(): Promise<any[]> {
     return await firstValueFrom(
       this.http.get<any[]>(`${environment.apiUrl}/patients/available`)

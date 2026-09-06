@@ -23,6 +23,9 @@ export class EventFormComponent implements OnInit, OnChanges {
   activeTab: 'details' | 'comments' = 'details';
   newCommentText = '';
   commentsList: any[] = [];
+  
+  // Cola para acumular múltiples comentarios nuevos antes de darle a Guardar
+  pendingCommentsQueue: string[] = [];
 
   @Input() eventData: any = {};
   @Output() close = new EventEmitter<void>();
@@ -32,10 +35,15 @@ export class EventFormComponent implements OnInit, OnChanges {
     const currentUser = this.authService.user();
     if (currentUser?.id) {
       try {
+        const patientsPromise = currentUser.isCoordinator
+          ? this.calendarService.getAllPatients()
+          : this.calendarService.getPatientsByVolunteer(currentUser.id);
+
         const [patientsData, typesData] = await Promise.all([
-          this.calendarService.getPatientsByVolunteer(currentUser.id),
+          patientsPromise,
           this.calendarService.getGeneralEventTypes()
         ]);
+
         this.patients = patientsData || [];
         this.eventTypes = typesData || [];
         
@@ -55,12 +63,12 @@ export class EventFormComponent implements OnInit, OnChanges {
         patient_id: safeValue.patient_id ?? null,
         title: safeValue.title ?? null,
         start_datetime: safeValue.start_datetime ? this.toLocalInput(safeValue.start_datetime) : '',
-        end_datetime: safeValue.end_datetime ? this.toLocalInput(safeValue.end_datetime) : '',
-        comment: ''
+        end_datetime: safeValue.end_datetime ? this.toLocalInput(safeValue.end_datetime) : ''
       };
       
       this.eventType = this.formModel.patient_id ? 'patient' : (this.formModel.title ? 'general' : 'patient');
       this.newCommentText = '';
+      this.pendingCommentsQueue = []; // Limpiar cola al cambiar de evento
 
       this.processComments(safeValue);
       this.checkAndApplyDefaults();
@@ -116,18 +124,23 @@ export class EventFormComponent implements OnInit, OnChanges {
       return;
     }
 
+    const textToSave = this.newCommentText.trim();
     const currentUser = this.authService.user();
-    const authorName = currentUser?.name || currentUser?.name || currentUser?.email || 'Anónimo';
+    const authorName = currentUser?.name || currentUser?.email || 'Anónimo';
 
     const newCommentObj = {
-      comment: this.newCommentText.trim(),
+      comment: textToSave,
       comment_author_name: authorName,
       author_name: authorName,
       created_at: new Date()
     };
 
+    // Actualizar la lista visual al instante
     this.commentsList = [newCommentObj, ...this.commentsList];
-    this.formModel.comment = this.newCommentText.trim();
+    
+    // Acumular en la cola de pendientes para enviar en el payload al guardar
+    this.pendingCommentsQueue.push(textToSave);
+    
     this.newCommentText = '';
   }
 
@@ -225,6 +238,7 @@ export class EventFormComponent implements OnInit, OnChanges {
       if (this.eventType === 'patient' && !this.formModel.patient_id) throw new Error('Seleccione un paciente');
       if (this.eventType === 'general' && !this.formModel.title) throw new Error('Seleccione un tipo de evento');
 
+      // Si el usuario escribió algo en el input pero olvidó darle al botón de añadir comentario
       if (this.newCommentText && this.newCommentText.trim() !== '') {
         this.addComment();
       }
@@ -234,11 +248,14 @@ export class EventFormComponent implements OnInit, OnChanges {
         type: this.eventType,
         start_datetime: new Date(this.formModel.start_datetime),
         end_datetime: new Date(this.formModel.end_datetime),
-        comment: this.formModel.comment
+        comments: this.pendingCommentsQueue // Enviamos la cola completa de comentarios nuevos
       };
 
-      if (payload.id) await this.calendarService.updateEvent(payload.id, payload);
-      else await this.calendarService.createEvent(payload);
+      if (payload.id) {
+        await this.calendarService.updateEvent(payload.id, payload);
+      } else {
+        await this.calendarService.createEvent(payload);
+      }
 
       this.close.emit();
     } catch (e: any) {
