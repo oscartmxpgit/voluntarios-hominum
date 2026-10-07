@@ -1,121 +1,566 @@
 <div class="modal-container">
   <div class="modal-content">
-    <h3>{{ formModel.id ? 'Editar Evento' : 'Nuevo Evento' }}</h3>
 
-    <!-- Tabs Navigation -->
+    <h3>
+      {{ formModel.id ? 'Editar Evento' : 'Nuevo Evento' }}
+    </h3>
+
+    <!-- ===================================================== -->
+    <!-- TABS -->
+    <!-- ===================================================== -->
+
     <div class="tabs-nav">
-      <button 
-        type="button" 
-        class="tab-btn" 
-        [class.active]="activeTab === 'details'" 
+
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab === 'details'"
         (click)="setTab('details')">
         Detalles
       </button>
-      <button 
-        type="button" 
-        class="tab-btn" 
-        [class.active]="activeTab === 'comments'" 
+
+
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab === 'comments'"
         (click)="setTab('comments')">
+
         Observaciones
+
         @if (commentsList.length > 0) {
-          <span class="badge">{{ commentsList.length }}</span>
+          <span class="badge">
+            {{ commentsList.length }}
+          </span>
         }
+
       </button>
+
+
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab === 'attachments'"
+        (click)="setTab('attachments')">
+
+        Archivos
+
+        @if (attachmentCount > 0) {
+          <span class="badge">
+            {{ attachmentCount }}
+          </span>
+        }
+
+      </button>
+
     </div>
 
-    <!-- Tab 1: Event Details -->
+
+    <!-- ===================================================== -->
+    <!-- TAB 1: DETAILS -->
+    <!-- ===================================================== -->
+
     @if (activeTab === 'details') {
+
       <div class="tab-body">
+
         <div class="form-group-radio">
-          <label><input type="radio" [(ngModel)]="eventType" value="patient" (change)="onTypeChange()"> Paciente</label>
-          <label><input type="radio" [(ngModel)]="eventType" value="general" (change)="onTypeChange()"> Evento</label>
+
+          <label>
+            <input
+              type="radio"
+              [(ngModel)]="eventType"
+              value="patient"
+              (change)="onTypeChange()">
+
+            Paciente
+          </label>
+
+
+          <label>
+            <input
+              type="radio"
+              [(ngModel)]="eventType"
+              value="general"
+              (change)="onTypeChange()">
+
+            Evento
+          </label>
+
         </div>
+
 
         @if (eventType === 'patient') {
+
           <div class="form-group">
+
             <label>Paciente (*)</label>
-            <select [(ngModel)]="formModel.patient_id" (change)="onPatientChange()" required>
-              <option [ngValue]="null" disabled>Seleccione un paciente</option>
-              @for (patient of patients; track patient.id) {
-                <option [ngValue]="patient.id">{{ patient.name }}</option>
+
+            <select
+              [(ngModel)]="formModel.patient_id"
+              (change)="onPatientChange()"
+              required>
+
+              <option
+                [ngValue]="null"
+                disabled>
+                Seleccione un paciente
+              </option>
+
+              @for (
+                patient of patients;
+                track patient.id
+              ) {
+
+                <option
+                  [ngValue]="patient.id">
+                  {{ patient.name }}
+                </option>
+
               }
+
             </select>
+
           </div>
+
         } @else {
+
           <div class="form-group">
-            <label>Tipo de Evento (*)</label>
-            <select [(ngModel)]="formModel.title" (change)="onEventTypeChange()" required>
-              <option [ngValue]="null" disabled>Seleccione una categoría</option>
-              @for (type of eventTypes; track type.id) {
-                <option [ngValue]="type.name">{{ type.name }}</option>
+
+            <label>
+              Tipo de Evento (*)
+            </label>
+
+            <select
+              [(ngModel)]="formModel.title"
+              (change)="onEventTypeChange()"
+              required>
+
+              <option
+                [ngValue]="null"
+                disabled>
+                Seleccione una categoría
+              </option>
+
+              @for (
+                type of eventTypes;
+                track type.id
+              ) {
+
+                <option
+                  [ngValue]="type.name">
+                  {{ type.name }}
+                </option>
+
               }
+
             </select>
+
           </div>
         }
 
-        <div class="form-group">
-          <label>Inicio</label>
-          <input type="datetime-local" [(ngModel)]="formModel.start_datetime" (change)="onStartChange()" />
-        </div>
 
         <div class="form-group">
-          <label>Fin</label>
-          <input type="datetime-local" [(ngModel)]="formModel.end_datetime" />
+
+          <label>Inicio</label>
+
+          <input
+            type="datetime-local"
+            [(ngModel)]="formModel.start_datetime"
+            (change)="onStartChange()" />
+
         </div>
+
+
+        <div class="form-group">
+
+          <label>Fin</label>
+
+          <input
+            type="datetime-local"
+            [(ngModel)]="formModel.end_datetime" />
+
+        </div>
+
       </div>
     }
 
-    <!-- Tab 2: Comments / Observaciones -->
+
+    <!-- ===================================================== -->
+    <!-- TAB 2: COMMENTS -->
+    <!-- ===================================================== -->
+
     @if (activeTab === 'comments') {
+
       <div class="tab-body">
-        <!-- New Comment Input -->
+
         <div class="add-comment-section">
-          <label>Añadir nueva observación</label>
-          <textarea 
-            [(ngModel)]="newCommentText" 
+
+          <label>
+            Añadir nueva observación
+          </label>
+
+          <textarea
+            [(ngModel)]="newCommentText"
             placeholder="Escriba un comentario o nota aquí...">
           </textarea>
+
+
           <div class="add-comment-actions">
-            <button type="button" class="btn-add-comment" (click)="addComment()">
+
+            <button
+              type="button"
+              class="btn-add-comment"
+              (click)="addComment()">
+
               + Añadir comentario
+
             </button>
+
           </div>
+
         </div>
 
-        <!-- All Comments Container -->
+
         <div class="comments-history">
+
           @if (commentsList.length > 0) {
+
             <div class="comments-scroll-list">
-              @for (item of commentsList; track item.id || $index) {
+
+              @for (
+                item of commentsList;
+                track item.id || $index
+              ) {
+
                 <div class="comment-card">
+
                   <div class="comment-header">
+
                     <span class="comment-author">
-                      👤 {{ item.comment_author_name || item.author_name || item.author || 'Anónimo' }}
+
+                      👤
+                      {{
+                        item.comment_author_name ||
+                        item.author_name ||
+                        item.author ||
+                        'Anónimo'
+                      }}
+
                     </span>
+
+
                     <span class="comment-date">
-                      🕒 {{ formatDateEs(item.created_at || item.date) }}
+
+                      🕒
+                      {{
+                        formatDateEs(
+                          item.created_at ||
+                          item.date
+                        )
+                      }}
+
                     </span>
+
                   </div>
+
+
                   <div class="comment-body">
-                    {{ item.comment || item.text }}
+
+                    {{
+                      item.comment ||
+                      item.text
+                    }}
+
                   </div>
+
                 </div>
               }
+
             </div>
+
           } @else {
-            <p class="no-comments">No hay observaciones registradas aún.</p>
+
+            <p class="no-comments">
+              No hay observaciones registradas aún.
+            </p>
+
           }
+
         </div>
+
       </div>
     }
 
-    <!-- Global Actions -->
+
+    <!-- ===================================================== -->
+    <!-- TAB 3: ATTACHMENTS -->
+    <!-- ===================================================== -->
+
+    @if (activeTab === 'attachments') {
+
+      <div class="tab-body">
+
+        <div class="attachments-section">
+
+          <label class="attachment-label">
+            Añadir archivos
+          </label>
+
+
+          <input
+            #fileInput
+            type="file"
+            multiple
+            accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
+            (change)="onFilesSelected($event)" />
+
+
+          <p class="attachment-help">
+            JPG, PNG, WebP o PDF. Máximo 10 MB por archivo.
+          </p>
+
+
+          <!-- =============================================== -->
+          <!-- NEW FILES WAITING TO BE UPLOADED -->
+          <!-- =============================================== -->
+
+          @if (pendingFiles.length > 0) {
+
+            <div class="attachment-group">
+
+              <h4>
+                Archivos nuevos
+              </h4>
+
+
+              @for (
+                file of pendingFiles;
+                track $index
+              ) {
+
+                <div class="attachment-card pending">
+
+                  <div class="attachment-info">
+
+                    <span class="attachment-icon">
+                      {{ getFileIcon(file.type) }}
+                    </span>
+
+
+                    <div>
+
+                      <div class="attachment-name">
+                        {{ file.name }}
+                      </div>
+
+                      <div class="attachment-meta">
+
+                        {{ formatFileSize(file.size) }}
+
+                        · Pendiente de guardar
+
+                      </div>
+
+                    </div>
+
+                  </div>
+
+
+                  <button
+                    type="button"
+                    class="btn-remove-file"
+                    (click)="removePendingFile($index)">
+
+                    Quitar
+
+                  </button>
+
+                </div>
+              }
+
+            </div>
+          }
+
+
+          <!-- =============================================== -->
+          <!-- FILES ALREADY STORED -->
+          <!-- =============================================== -->
+
+          @if (attachmentsList.length > 0) {
+
+            <div class="attachment-group">
+
+              <h4>
+                Archivos guardados
+              </h4>
+
+
+              @for (
+                attachment of attachmentsList;
+                track attachment.id
+              ) {
+
+                <div class="attachment-card">
+
+                  <div class="attachment-info">
+
+                    <span class="attachment-icon">
+
+                      {{
+                        getFileIcon(
+                          attachment.mime_type
+                        )
+                      }}
+
+                    </span>
+
+
+                    <div>
+
+                      <div class="attachment-name">
+
+                        {{
+                          attachment.original_name
+                        }}
+
+                      </div>
+
+
+                      <div class="attachment-meta">
+
+                        {{
+                          formatFileSize(
+                            attachment.file_size
+                          )
+                        }}
+
+                        @if (
+                          attachment.uploaded_by_name
+                        ) {
+
+                          ·
+                          {{
+                            attachment.uploaded_by_name
+                          }}
+
+                        }
+
+                        @if (
+                          attachment.created_at
+                        ) {
+
+                          ·
+                          {{
+                            formatDateEs(
+                              attachment.created_at
+                            )
+                          }}
+
+                        }
+
+                      </div>
+
+                    </div>
+
+                  </div>
+
+
+                  <div class="attachment-actions">
+
+                    <button
+                      type="button"
+                      class="btn-download-file"
+                      (click)="downloadAttachment(attachment)">
+
+                      Descargar
+
+                    </button>
+
+
+                    <button
+                      type="button"
+                      class="btn-remove-file"
+                      (click)="markAttachmentForRemoval(attachment)">
+
+                      Eliminar
+
+                    </button>
+
+                  </div>
+
+                </div>
+              }
+
+            </div>
+
+          }
+
+
+          @if (
+            attachmentsList.length === 0 &&
+            pendingFiles.length === 0
+          ) {
+
+            <p class="no-comments">
+              No hay archivos adjuntos.
+            </p>
+
+          }
+
+        </div>
+
+      </div>
+    }
+
+
+    <!-- ===================================================== -->
+    <!-- GLOBAL ACTIONS -->
+    <!-- ===================================================== -->
+
     <div class="actions">
-      <button type="button" class="btn-save" (click)="save()">Guardar</button>
+
+      <button
+        type="button"
+        class="btn-save"
+        [disabled]="saving"
+        (click)="save()">
+
+        {{
+          saving
+            ? 'Guardando...'
+            : 'Guardar'
+        }}
+
+      </button>
+
+
       @if (formModel.id) {
-        <button type="button" class="btn-delete" (click)="onDelete()">Eliminar</button>
+
+        <button
+          type="button"
+          class="btn-delete"
+          [disabled]="saving"
+          (click)="onDelete()">
+
+          Eliminar
+
+        </button>
+
       }
-      <button type="button" class="btn-cancel" (click)="close.emit()">Cancelar</button>
+
+
+      <button
+        type="button"
+        class="btn-cancel"
+        [disabled]="saving"
+        (click)="close.emit()">
+
+        Cancelar
+
+      </button>
+
     </div>
+
   </div>
 </div>

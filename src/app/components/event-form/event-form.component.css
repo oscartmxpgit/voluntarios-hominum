@@ -230,3 +230,113 @@ button {
 .btn-save { background: #28a745; color: white; }
 .btn-delete { background: #dc3545; color: white; }
 .btn-cancel { background: #e9ecef; color: #495057; }
+
+/* ==========================================================
+   ATTACHMENTS
+   ========================================================== */
+
+.attachments-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.attachment-label {
+  font-weight: 600;
+}
+
+.attachment-help {
+  margin: 4px 0 12px;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.attachment-group {
+  margin-top: 12px;
+}
+
+.attachment-group h4 {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+}
+
+.attachment-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+
+  padding: 10px 12px;
+  margin-bottom: 8px;
+
+  border: 1px solid #ddd;
+  border-radius: 7px;
+
+  background: #fff;
+}
+
+.attachment-card.pending {
+  border-style: dashed;
+  background: #fafafa;
+}
+
+.attachment-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  min-width: 0;
+}
+
+.attachment-icon {
+  font-size: 1.4rem;
+}
+
+.attachment-name {
+  font-weight: 500;
+
+  word-break: break-word;
+}
+
+.attachment-meta {
+  margin-top: 3px;
+
+  font-size: 0.78rem;
+  color: #777;
+}
+
+.attachment-actions {
+  display: flex;
+  gap: 7px;
+
+  flex-shrink: 0;
+}
+
+.btn-download-file,
+.btn-remove-file {
+  border: none;
+  border-radius: 5px;
+
+  padding: 6px 10px;
+
+  cursor: pointer;
+}
+
+.btn-download-file {
+  background: #e9f2ff;
+  color: #1d5ca8;
+}
+
+.btn-remove-file {
+  background: #fdeaea;
+  color: #a52323;
+}
+
+.btn-download-file:hover {
+  background: #dbeaff;
+}
+
+.btn-remove-file:hover {
+  background: #f8d8d8;
+}
