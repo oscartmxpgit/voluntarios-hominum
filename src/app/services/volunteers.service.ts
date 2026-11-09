@@ -5,11 +5,20 @@ import { environment } from '../../environments/environment';
 
 export interface Volunteer {
   id: number;
-  clerk_user_id: string;
+  clerk_user_id?: string;
   email: string;
-  is_coordinator: number; // 0 o 1
-  is_active: number;      // 0 o 1 (Añadido)
-  created_at: string;
+  full_name: string | null;
+  residencia: string | null;
+  is_coordinator: number;
+  is_active: number;
+  created_at?: string;
+}
+
+export interface VolunteerUpdate {
+  email?: string;
+  full_name?: string | null;
+  residencia?: string | null;
+  is_active?: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -18,27 +27,42 @@ export class VolunteersService {
   private apiUrl = `${environment.apiUrl}/volunteers`;
 
   async getAll(): Promise<Volunteer[]> {
-    const volunteers = await firstValueFrom(this.http.get<Volunteer[]>(this.apiUrl));
-    return volunteers || [];
+    const volunteers = await firstValueFrom(
+      this.http.get<Volunteer[]>(this.apiUrl)
+    );
+
+    return volunteers ?? [];
   }
 
-  // Nuevo método para registrar nuevo usuario
   async create(user: { email: string }): Promise<void> {
-    await firstValueFrom(this.http.post(this.apiUrl, user));
+    await firstValueFrom(
+      this.http.post(this.apiUrl, user)
+    );
   }
 
-  // Nuevo método para actualizar el estado de activación (is_active)
-  async update(id: number, data: { is_active: number }): Promise<void> {
-    await firstValueFrom(this.http.patch(`${this.apiUrl}/${id}`, data));
+  async update(
+    id: number,
+    data: VolunteerUpdate
+  ): Promise<void> {
+    await firstValueFrom(
+      this.http.patch(`${this.apiUrl}/${id}`, data)
+    );
   }
 
-  async updateRole(id: number, isCoordinator: boolean): Promise<void> {
-    await firstValueFrom(this.http.patch(`${this.apiUrl}/${id}/role`, { 
-      is_coordinator: isCoordinator ? 1 : 0 
-    }));
+  async updateRole(
+    id: number,
+    isCoordinator: boolean
+  ): Promise<void> {
+    await firstValueFrom(
+      this.http.patch(`${this.apiUrl}/${id}/role`, {
+        is_coordinator: isCoordinator ? 1 : 0
+      })
+    );
   }
 
   async delete(id: number): Promise<void> {
-    await firstValueFrom(this.http.delete(`${this.apiUrl}/${id}`));
+    await firstValueFrom(
+      this.http.delete(`${this.apiUrl}/${id}`)
+    );
   }
 }

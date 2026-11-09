@@ -1,20 +1,54 @@
 <main class="volunteers-page">
   <header class="page-header">
-    <h1>Gestión de Usuarios</h1>
-    <button class="btn-primary" (click)="openCreateModal()">➕ Nuevo Usuario</button>
+    <h1>Gestión de Voluntarios</h1>
+    <button class="btn-primary" (click)="openCreateModal()">
+      ➕ Nuevo Voluntario
+    </button>
   </header>
+
+  @if (pageError) {
+    <p class="error-message" role="alert">{{ pageError }}</p>
+  }
 
   @if (showForm) {
     <section class="form-card">
-      <h3>Registrar Nuevo Usuario</h3>
-      <div class="form-group">
-        <label>Email del usuario</label>
-        <input type="email" [(ngModel)]="newEmail" placeholder="ejemplo@correo.com">
-      </div>
-      <div class="form-actions">
-        <button class="btn-secondary" (click)="showForm = false">Cancelar</button>
-        <button class="btn-save" (click)="createVolunteer()">Registrar</button>
-      </div>
+      <h3>Registrar Nuevo Voluntario</h3>
+
+      <form #createForm="ngForm" (ngSubmit)="createVolunteer()">
+        <div class="form-group">
+          <label for="newEmail">Email del voluntario</label>
+          <input
+            id="newEmail"
+            name="newEmail"
+            type="email"
+            [(ngModel)]="newEmail"
+            placeholder="ejemplo@correo.com"
+            required
+            email
+            maxlength="255"
+            [disabled]="creating"
+          >
+        </div>
+
+        <div class="form-actions">
+          <button
+            type="button"
+            class="btn-secondary"
+            (click)="showForm = false"
+            [disabled]="creating"
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="submit"
+            class="btn-save"
+            [disabled]="creating || createForm.invalid"
+          >
+            {{ creating ? 'Registrando...' : 'Registrar' }}
+          </button>
+        </div>
+      </form>
     </section>
   }
 
@@ -26,37 +60,87 @@
         <thead>
           <tr>
             <th>Email</th>
+            <th>Nombre</th>
+            <th>Residencia</th>
             <th>Rol</th>
             <th class="text-center">Estado</th>
             <th class="text-center">Acciones</th>
           </tr>
         </thead>
+
         <tbody>
           @for (v of volunteers; track v.id) {
             <tr>
               <td>{{ v.email }}</td>
+              <td>{{ v.full_name || '—' }}</td>
+              <td>{{ v.residencia || '—' }}</td>
+
               <td>
-                <span class="badge" [class.coordinator]="v.is_coordinator === 1">
+                <span
+                  class="badge"
+                  [class.coordinator]="v.is_coordinator === 1"
+                >
                   {{ v.is_coordinator === 1 ? 'Coordinador' : 'Voluntario' }}
                 </span>
               </td>
+
               <td class="text-center">
-                <label class="switch" [attr.title]="v.is_coordinator === 1 ? 'No se puede desactivar a un coordinador' : null">
-                  <input 
-                    type="checkbox" 
+                <label
+                  class="switch"
+                  [attr.title]="
+                    v.is_coordinator === 1
+                      ? 'No se puede desactivar a un coordinador'
+                      : null
+                  "
+                >
+                  <input
+                    type="checkbox"
                     [checked]="v.is_active === 1"
-                    [disabled]="v.is_coordinator === 1"
-                    (change)="toggleActive(v)"
+                    [disabled]="
+                      v.is_coordinator === 1 || busyIds.has(v.id)
+                    "
+                    [attr.aria-label]="'Estado activo de ' + v.email"
+                    (change)="toggleActive(v, $event)"
                   >
                   <span class="slider round"></span>
                 </label>
               </td>
+
               <td class="text-center">
-                @if (v.is_coordinator === 0) {
-                  <button class="btn-delete" (click)="deleteUser(v)">🗑️ Eliminar</button>
-                } @else {
-                  <span class="no-action">Protegido</span>
-                }
+                <div class="row-actions">
+                  <button
+                    type="button"
+                    class="btn-edit"
+                    (click)="openEditModal(v)"
+                    [disabled]="busyIds.has(v.id)"
+                  >
+                    ✏️ Editar
+                  </button>
+
+                  @if (v.is_coordinator === 0) {
+                    <button
+                      type="button"
+                      class="btn-delete"
+                      (click)="deleteUser(v)"
+                      [disabled]="busyIds.has(v.id)"
+                    >
+                      🗑️ Eliminar
+                    </button>
+                  } @else {
+                    <span
+                      class="no-action"
+                      title="Protegido frente a desactivación y eliminación"
+                    >
+                      Protegido
+                    </span>
+                  }
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="text-center">
+                No hay voluntarios registrados.
               </td>
             </tr>
           }
@@ -64,4 +148,93 @@
       </table>
     </section>
   }
+
+  <dialog
+    #editDialog
+    class="edit-dialog"
+    aria-labelledby="editTitle"
+    (cancel)="onEditCancel($event)"
+  >
+    @if (editingVolunteer) {
+      <form #editForm="ngForm" (ngSubmit)="saveVolunteer()">
+        <header class="modal-header">
+          <h2 id="editTitle">Editar voluntario</h2>
+
+          <button
+            type="button"
+            class="modal-close"
+            aria-label="Cerrar"
+            (click)="closeEditModal()"
+            [disabled]="saving"
+          >
+            ✕
+          </button>
+        </header>
+
+        <div class="modal-body">
+          @if (editError) {
+            <p class="error-message" role="alert">{{ editError }}</p>
+          }
+
+          <div class="form-group">
+            <label for="editName">Nombre completo</label>
+            <input
+              id="editName"
+              name="full_name"
+              type="text"
+              [(ngModel)]="editingVolunteer.full_name"
+              maxlength="255"
+              [disabled]="saving"
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="editEmail">Email</label>
+            <input
+              id="editEmail"
+              name="email"
+              type="email"
+              [(ngModel)]="editingVolunteer.email"
+              required
+              email
+              maxlength="255"
+              [disabled]="saving"
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="editResidence">Residencia</label>
+            <input
+              id="editResidence"
+              name="residencia"
+              type="text"
+              [(ngModel)]="editingVolunteer.residencia"
+              placeholder="Localidad o lugar de residencia"
+              maxlength="255"
+              [disabled]="saving"
+            >
+          </div>
+        </div>
+
+        <footer class="form-actions modal-footer">
+          <button
+            type="button"
+            class="btn-secondary"
+            (click)="closeEditModal()"
+            [disabled]="saving"
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="submit"
+            class="btn-save"
+            [disabled]="saving || editForm.invalid"
+          >
+            {{ saving ? 'Guardando...' : 'Guardar cambios' }}
+          </button>
+        </footer>
+      </form>
+    }
+  </dialog>
 </main>
